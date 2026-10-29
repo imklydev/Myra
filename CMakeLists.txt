@@ -21,6 +21,7 @@ add_executable(Myra
     rendering/rendering.cpp
     theme/colors.cpp
     theme/font.cpp
+    third_party/tinyfiledialogs.cpp
 )
 
 target_link_libraries(Myra PRIVATE

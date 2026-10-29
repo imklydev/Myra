@@ -4,9 +4,10 @@
 
 class codeSection : public Section
 {
+
 public:
     Vector2 pos = {60, 0};
-    Vector2 size = {740, 800};
+    Vector2 size = {4000, 4000};
     float textSize = 16;
     std::string text = "";
 

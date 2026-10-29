@@ -11,7 +11,7 @@
 extern SDL_Window *window;
 extern SDL_Renderer *renderer;
 
-void CreateWindow(const char *title, int width, int height);
+void CreateSDLWindow(const char *title, int width, int height);
 
 void InitRenderingBackend();
 

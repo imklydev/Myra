@@ -1,6 +1,7 @@
 #include "keyboard.h"
 
 KeyboardState Keyboard;
+const bool* IsKeyPressed;
 
 void BeginKeyboardFrame()
 {
@@ -8,10 +9,13 @@ void BeginKeyboardFrame()
     Keyboard.enter = false;
     Keyboard.backspace = false;
     Keyboard.escape = false;
+    
+    IsKeyPressed = SDL_GetKeyboardState(nullptr);
 }
 
 void HandleKeyboard(SDL_Event *event)
 {
+
     if (event->type == SDL_EVENT_TEXT_INPUT)
     {
         for (const char *c = event->text.text; *c; ++c) // iterate through all chars of the SDL text input
@@ -40,4 +44,6 @@ void HandleKeyboard(SDL_Event *event)
             break;
         }
     }
+
+    
 }

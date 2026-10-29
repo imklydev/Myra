@@ -14,6 +14,8 @@ struct KeyboardState
 
 extern KeyboardState Keyboard;
 
+extern const bool* IsKeyPressed;
+
 void BeginKeyboardFrame();
 
 void HandleKeyboard(SDL_Event *event);

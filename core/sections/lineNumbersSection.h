@@ -6,7 +6,7 @@ class lineNumbersSection : public Section
 {
 public:
     Vector2 pos = {0, 0};
-    Vector2 size = {50, 800};
+    Vector2 size = {50, 4000};
     float textSize = 16;
     int lineCount = 1;
     std::string lineNumbers;

@@ -7,7 +7,7 @@ int main()
 {
     InitRenderingBackend();
 
-    CreateWindow("Myra", 800, 800);
+    CreateSDLWindow("Myra", 800, 800);
 
     SDL_Event event;
     bool running = true;

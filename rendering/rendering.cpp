@@ -4,7 +4,7 @@
 SDL_Window *window;
 SDL_Renderer *renderer;
 
-void CreateWindow(const char *title, int width, int height)
+void CreateSDLWindow(const char *title, int width, int height)
 {
     window = SDL_CreateWindow(title, width, height, SDL_WINDOW_RESIZABLE);
 
