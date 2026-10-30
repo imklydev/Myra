@@ -1,5 +1,6 @@
 #include "../rendering/rendering.h"
 #include "keyboard.h"
+#include "mouse.h"
 
 #include "screens/codeEditorScreen.h"
 
@@ -15,6 +16,7 @@ int main()
     while (running)
     {
         BeginKeyboardFrame();
+        BeginMouseFrame();
 
         while (SDL_PollEvent(&event))
         {
@@ -24,6 +26,7 @@ int main()
             }
 
             HandleKeyboard(&event);
+            HandleMouse(&event);
         }
 
         if (Keyboard.escape)

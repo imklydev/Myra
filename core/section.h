@@ -10,5 +10,5 @@ public:
     Vector2 size;
 
     virtual void update() {};
-    virtual void draw() {};
+    virtual void draw(Vector2 pos_offset) {};
 };

@@ -17,6 +17,7 @@ class codeEditorScreen : public Screen
 private:
     const char *openedFile = nullptr;
     int CursorPos = -1; // = the character the cursor is selecting
+    Vector2 offset = {0, 0};
 
     void EraseCodePointAtCursorPos()
     {
@@ -173,12 +174,22 @@ private:
 
         size_t cursor = CursorPos + 1;
 
+        int lastCursorColumn = cursor - GetLineStart(cursor);
+
         CursorPos = GetLineStart(cursor) - 1;
-        std::cout << CursorPos << "\n";
 
         if (CursorPos >= 0)
         {
             MoveCursorLeft();
+
+            cursor = CursorPos + 1;
+            int currentColumn = cursor - GetLineStart(cursor);
+            while (currentColumn > lastCursorColumn)
+            {
+                cursor--;
+                currentColumn--;
+                MoveCursorLeft();
+            }
         }
     }
 
@@ -191,12 +202,30 @@ private:
 
         size_t cursor = CursorPos + 1;
 
+        int lastCursorColumn = cursor - GetLineStart(cursor);
+
         CursorPos = GetLineEnd(cursor) - 1;
-        std::cout << CursorPos << "\n";
 
         if (CursorPos < CodeSection.text.size() - 1)
         {
             MoveCursorRight();
+
+            cursor = CursorPos + 1;
+
+            int currentLineLength = GetLineEnd(cursor) - GetLineStart(cursor) + 1;
+            if (currentLineLength < lastCursorColumn)
+            {
+                CursorPos = GetLineEnd(cursor) - 1;
+                return;
+            }
+
+            int currentColumn = 0;
+            while (currentColumn < lastCursorColumn)
+            {
+                currentColumn++;
+                MoveCursorRight();
+                cursor = CursorPos + 1;
+            }
         }
     }
 
@@ -213,7 +242,7 @@ private:
 
         int line = std::count(CodeSection.text.begin(), CodeSection.text.begin() + lineStart, '\n');
 
-        DrawRect(Vector2(w + 60, line * lineHeight), Vector2(2, h));
+        DrawRect(Vector2(w + 60, line * lineHeight + offset.y), Vector2(2, h));
     }
 
 public:
@@ -250,6 +279,19 @@ public:
             MoveCursorRight();
         }
 
+        if (Keyboard.tab)
+        {
+            std::string tabString = "";
+            for (int i = 0; i < TAB_SIZE; i++)
+            {
+                tabString += ' ';
+            }
+
+            CodeSection.text.insert(CursorPos + 1, tabString);
+
+            CursorPos += tabString.size();
+        }
+
         // CTRL+O open file
         if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && IsKeyPressed[SDL_SCANCODE_O])
         {
@@ -262,9 +304,34 @@ public:
             SaveFile();
         }
 
+        if (Mouse.scroll)
+        {
+            offset.y += Mouse.scroll * SCROLL_SENSITIVITY;
+
+            if (offset.y > 0)
+            {
+                offset.y = 0;
+            }
+        }
+
         if (Keyboard.backspace)
         {
             EraseCodePointAtCursorPos();
+        }
+
+        if (Keyboard.delete_pressed)
+        {
+            int CursorPosSnapshot = CursorPos;
+            MoveCursorRight();
+
+            if (CursorPosSnapshot == CursorPos)
+            {
+                // the cursor is at the end of the text, so delete should do nothing
+            }
+            else
+            {
+                EraseCodePointAtCursorPos();
+            }
         }
 
         int lineCount = CalcCurrentLineCount();
@@ -274,8 +341,8 @@ public:
 
     void draw() override
     {
-        LineNumbersSection.draw();
-        CodeSection.draw();
+        LineNumbersSection.draw(offset);
+        CodeSection.draw(offset);
         DrawCursor();
     }
 };

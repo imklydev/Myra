@@ -7,17 +7,17 @@ class codeSection : public Section
 
 public:
     Vector2 pos = {60, 0};
-    Vector2 size = {4000, 4000};
+    Vector2 size = {4000, 40000};
     float textSize = 16;
     std::string text = "";
 
-    void draw() override
+    void draw(Vector2 pos_offset) override
     {
         SetDrawColor(BG_COLOR);
-        DrawRect(pos, size);
+        DrawRect(pos + pos_offset, size);
 
         SetDrawColor(TEXT_COLOR);
-        DrawText(text, textSize, pos, size);
+        DrawText(text, textSize, pos + pos_offset, size);
     }
 };
 

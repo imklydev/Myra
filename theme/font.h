@@ -2,4 +2,4 @@
 
 #include <string>
 
-extern std::string FONT;
+inline std::string FONT = "assets/fonts/JetBrainsMono.ttf";

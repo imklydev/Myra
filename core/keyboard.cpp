@@ -8,7 +8,9 @@ void BeginKeyboardFrame()
     Keyboard.text.clear();
     Keyboard.enter = false;
     Keyboard.backspace = false;
+    Keyboard.delete_pressed = false;
     Keyboard.escape = false;
+    Keyboard.tab = false;
     Keyboard.move = "none";
 
     IsKeyPressed = SDL_GetKeyboardState(nullptr);
@@ -38,8 +40,14 @@ void HandleKeyboard(SDL_Event *event)
         case SDLK_BACKSPACE:
             Keyboard.backspace = true;
             break;
+        case SDLK_DELETE:
+            Keyboard.delete_pressed = true;
+            break;
         case SDLK_ESCAPE:
             Keyboard.escape = true;
+            break;
+        case SDLK_TAB:
+            Keyboard.tab = true;
             break;
         case SDLK_LEFT:
             Keyboard.move = "left";

@@ -10,7 +10,9 @@ struct KeyboardState
     bool enter = false;
     bool backspace = false;
     bool escape = false;
+    bool tab = false;
     std::string move = "none";
+    bool delete_pressed = false;
 };
 
 extern KeyboardState Keyboard;
