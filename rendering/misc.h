@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 struct Vector2
 {
     float x, y;

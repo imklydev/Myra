@@ -10,11 +10,12 @@ struct KeyboardState
     bool enter = false;
     bool backspace = false;
     bool escape = false;
+    std::string move = "none";
 };
 
 extern KeyboardState Keyboard;
 
-extern const bool* IsKeyPressed;
+extern const bool *IsKeyPressed;
 
 void BeginKeyboardFrame();
 
