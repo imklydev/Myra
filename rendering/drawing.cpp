@@ -29,7 +29,6 @@ void DrawRect(Vector2 pos, Vector2 size, bool filled)
 
 std::unordered_map<std::string, TTF_Font *> cachedFonts;
 
-
 namespace
 {
     struct LineKey
@@ -218,7 +217,6 @@ void DrawText(const std::string &text, int textSize, Vector2 pos, Vector2 size)
 
     int lineSkip = TTF_GetFontLineSkip(font);
 
-    
     bool clip = size.x >= 0 && size.y >= 0;
     bool hadClip = clip && SDL_RenderClipEnabled(renderer);
     SDL_Rect previousClip = {0, 0, 0, 0};

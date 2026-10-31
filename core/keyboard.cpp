@@ -12,6 +12,7 @@ void BeginKeyboardFrame()
     Keyboard.escape = false;
     Keyboard.tab = false;
     Keyboard.move = "none";
+    Keyboard.key = 0;
 
     IsKeyPressed = SDL_GetKeyboardState(nullptr);
 }
@@ -31,6 +32,7 @@ void HandleKeyboard(SDL_Event *event)
     }
     else if (event->type == SDL_EVENT_KEY_DOWN)
     {
+        Keyboard.key = event->key.key;
         switch (event->key.key)
         {
         case SDLK_RETURN:

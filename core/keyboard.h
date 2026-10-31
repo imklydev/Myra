@@ -13,6 +13,7 @@ struct KeyboardState
     bool tab = false;
     std::string move = "none";
     bool delete_pressed = false;
+    SDL_Keycode key;
 };
 
 extern KeyboardState Keyboard;

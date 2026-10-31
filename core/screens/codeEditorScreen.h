@@ -16,8 +16,11 @@ class codeEditorScreen : public Screen
 {
 private:
     const char *openedFile = nullptr;
-    int CursorPos = -1; // = the character the cursor is selecting
-    Vector2 offset = {0, 0};
+    int CursorPos = -1; // = the character the cursor is selecting (-1 = begining, before any char)
+    int SelectionStartPos = -1;
+    int selectionLength;
+    bool selectionMode = false;
+    Vector2 offset = {0, 0}; // for scrolling
 
     void EraseCodePointAtCursorPos()
     {
@@ -197,7 +200,8 @@ private:
     {
         if (CursorPos == -1)
         {
-            CursorPos = 0;
+            CursorPos = GetLineEnd(CursorPos + 1);
+            return;
         }
 
         size_t cursor = CursorPos + 1;
@@ -212,7 +216,13 @@ private:
 
             cursor = CursorPos + 1;
 
-            int currentLineLength = GetLineEnd(cursor) - GetLineStart(cursor) + 1;
+            int currentLineLength = GetLineEnd(cursor) - GetLineStart(cursor);
+
+            if (currentLineLength == 0)
+            {
+                return;
+            }
+
             if (currentLineLength < lastCursorColumn)
             {
                 CursorPos = GetLineEnd(cursor) - 1;
@@ -242,7 +252,145 @@ private:
 
         int line = std::count(CodeSection.text.begin(), CodeSection.text.begin() + lineStart, '\n');
 
-        DrawRect(Vector2(w + 60, line * lineHeight + offset.y), Vector2(2, h));
+        DrawRect(Vector2(w + CodeSection.pos.x, line * lineHeight + offset.y), Vector2(2, h));
+    }
+
+    // Some AI generated code but I'm way too tired to actually rewrite this
+    void DrawSelection()
+    {
+        const std::string &text = CodeSection.text;
+        const size_t size = text.size();
+
+        if (size == 0 || SelectionStartPos == CursorPos)
+            return;
+
+        TTF_Font *font = cachedFonts[FONT + "_" + std::to_string(16)];
+        if (!font)
+            return;
+
+        const int lineHeight = TTF_GetFontLineSkip(font);
+
+        // A cursor position p means "after character p", so the boundary index is p + 1.
+        // Selection is the half-open range [selBegin, selEnd).
+        long long a = static_cast<long long>(std::min(SelectionStartPos, CursorPos)) + 1;
+        long long b = static_cast<long long>(std::max(SelectionStartPos, CursorPos)) + 1;
+
+        a = std::clamp<long long>(a, 0, static_cast<long long>(size));
+        b = std::clamp<long long>(b, 0, static_cast<long long>(size));
+
+        const size_t selBegin = static_cast<size_t>(a);
+        const size_t selEnd = static_cast<size_t>(b);
+
+        if (selBegin >= selEnd)
+            return;
+
+        auto measure = [&](const std::string &s) -> int
+        {
+            if (s.empty())
+                return 0;
+            int w = 0, h = 0;
+            TTF_GetStringSize(font, s.c_str(), 0, &w, &h);
+            return w;
+        };
+
+        size_t lineStart = GetLineStart(selBegin);
+        int line = static_cast<int>(std::count(text.begin(), text.begin() + lineStart, '\n'));
+
+        // lineStart is always <= size here, so GetLineStart/GetLineEnd are safe.
+        while (lineStart <= size)
+        {
+            const size_t lineEnd = GetLineEnd(lineStart); // index of '\n' or size
+
+            const size_t segBegin = std::max(selBegin, lineStart);
+            const size_t segEnd = std::min(selEnd, lineEnd);
+
+            const float y = line * lineHeight + offset.y;
+
+            if (segBegin < segEnd)
+            {
+                const std::string prefix = text.substr(lineStart, segBegin - lineStart);
+                const std::string sel = text.substr(segBegin, segEnd - segBegin);
+
+                const float x = CodeSection.pos.x + measure(prefix);
+                const int selW = measure(sel);
+
+                SetDrawColor(SELECTION_BG_COLOR);
+                DrawRect(Vector2(x, y), Vector2(selW, lineHeight));
+
+                SetDrawColor({0, 0, 0, 255});
+                DrawText(sel, 16, Vector2(x, y));
+                SetDrawColor(TEXT_COLOR);
+            }
+
+            // Selection continues past this line's '\n': stop here only if it doesn't.
+            if (lineEnd >= selEnd)
+                break;
+
+            // Optional: small highlight so selected newlines (and empty lines) are visible.
+            if (selBegin <= lineEnd)
+            {
+                const float x = CodeSection.pos.x + measure(text.substr(lineStart, lineEnd - lineStart));
+                SetDrawColor(SELECTION_BG_COLOR);
+                DrawRect(Vector2(x, y), Vector2(6, lineHeight));
+                SetDrawColor(TEXT_COLOR);
+            }
+
+            // lineEnd < selEnd <= size, so text[lineEnd] == '\n' and lineEnd + 1 <= size.
+            lineStart = lineEnd + 1;
+            line++;
+        }
+    }
+
+    void HandleBackspace()
+    {
+        if (selectionMode && CursorPos != SelectionStartPos)
+        {
+
+            CodeSection.text.erase(std::min(SelectionStartPos + 1, CursorPos + 1),
+                                   selectionLength);
+
+            if (CursorPos > SelectionStartPos)
+            {
+                CursorPos = SelectionStartPos;
+            }
+
+            selectionMode = false;
+        }
+        else
+        {
+            EraseCodePointAtCursorPos();
+        }
+    }
+
+    void HandleDelete()
+    {
+        if (selectionMode && CursorPos != SelectionStartPos)
+        {
+
+            CodeSection.text.erase(std::min(SelectionStartPos + 1, CursorPos + 1),
+                                   selectionLength);
+
+            if (CursorPos > SelectionStartPos)
+            {
+                CursorPos = SelectionStartPos;
+            }
+
+            selectionMode = false;
+        }
+        else
+        {
+            int CursorPosSnapshot = CursorPos;
+            MoveCursorRight();
+
+            if (CursorPosSnapshot == CursorPos)
+            {
+                // the cursor is at the end of the text, so delete should do nothing
+            }
+            else
+            {
+                EraseCodePointAtCursorPos();
+            }
+        }
     }
 
 public:
@@ -250,9 +398,34 @@ public:
     {
         if (!Keyboard.text.empty())
         {
+            if (selectionMode)
+            {
+                HandleBackspace();
+            }
+
             CodeSection.text.insert(CursorPos + 1, Keyboard.text);
 
             CursorPos += Keyboard.text.size();
+        }
+
+        // SHIFT select text
+        if (!selectionMode && (IsKeyPressed[SDL_SCANCODE_LSHIFT] || IsKeyPressed[SDL_SCANCODE_RSHIFT]) && Keyboard.move != "none")
+        {
+            selectionMode = true;
+            SelectionStartPos = CursorPos;
+        }
+
+        if ((!(Keyboard.text.empty())) ||
+            (!(IsKeyPressed[SDL_SCANCODE_LSHIFT] || IsKeyPressed[SDL_SCANCODE_RSHIFT]) && Keyboard.move != "none"))
+        {
+            selectionMode = false;
+        }
+
+        if (selectionMode)
+        {
+            selectionLength = std::abs((SelectionStartPos + 1) - (CursorPos + 1));
+            // std::cout << CodeSection.text.substr(std::min(SelectionStartPos + 1, CursorPos + 1),
+            //                                      selectionLength);
         }
 
         // Cursor movement
@@ -275,6 +448,10 @@ public:
 
         if (Keyboard.enter)
         {
+            if (selectionMode)
+            {
+                HandleBackspace();
+            }
             CodeSection.text.insert(CursorPos + 1, "\n");
             MoveCursorRight();
         }
@@ -293,15 +470,33 @@ public:
         }
 
         // CTRL+O open file
-        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && IsKeyPressed[SDL_SCANCODE_O])
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_O)
         {
             OpenFile();
         }
 
         // CTRL+S save file
-        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && IsKeyPressed[SDL_SCANCODE_S])
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_S)
         {
             SaveFile();
+        }
+
+        // CTRL+V paste text
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_V)
+        {
+            char *pastedText = SDL_GetClipboardText();
+
+            CodeSection.text.insert(CursorPos + 1, pastedText);
+
+            CursorPos += strlen(pastedText);
+        }
+
+        // CTRL+C copy text
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_C)
+        {
+            std::string copiedText = CodeSection.text.substr(std::min(SelectionStartPos + 1, CursorPos + 1),
+                                                             selectionLength);
+            SDL_SetClipboardText(copiedText.c_str());
         }
 
         if (Mouse.scroll)
@@ -316,22 +511,12 @@ public:
 
         if (Keyboard.backspace)
         {
-            EraseCodePointAtCursorPos();
+            HandleBackspace();
         }
 
         if (Keyboard.delete_pressed)
         {
-            int CursorPosSnapshot = CursorPos;
-            MoveCursorRight();
-
-            if (CursorPosSnapshot == CursorPos)
-            {
-                // the cursor is at the end of the text, so delete should do nothing
-            }
-            else
-            {
-                EraseCodePointAtCursorPos();
-            }
+            HandleDelete();
         }
 
         int lineCount = CalcCurrentLineCount();
@@ -343,6 +528,11 @@ public:
     {
         LineNumbersSection.draw(offset);
         CodeSection.draw(offset);
+
+        if (selectionMode && selectionLength > 0)
+        {
+            DrawSelection();
+        }
         DrawCursor();
     }
 };
