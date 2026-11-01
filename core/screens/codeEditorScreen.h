@@ -255,7 +255,6 @@ private:
         DrawRect(Vector2(w + CodeSection.pos.x, line * lineHeight + offset.y), Vector2(2, h));
     }
 
-    // Some AI generated code but I'm way too tired to actually rewrite this
     void DrawSelection()
     {
         const std::string &text = CodeSection.text;
@@ -497,6 +496,23 @@ public:
             std::string copiedText = CodeSection.text.substr(std::min(SelectionStartPos + 1, CursorPos + 1),
                                                              selectionLength);
             SDL_SetClipboardText(copiedText.c_str());
+        }
+
+        // CTRL+X cut text
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_X)
+        {
+            std::string copiedText = CodeSection.text.substr(std::min(SelectionStartPos + 1, CursorPos + 1),
+                                                             selectionLength);
+            SDL_SetClipboardText(copiedText.c_str());
+            HandleBackspace();
+        }
+
+        // CTRL+A cut text
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_A)
+        {
+            selectionMode = true;
+            CursorPos = CodeSection.text.size();
+            SelectionStartPos = -1;
         }
 
         if (Mouse.scroll)
