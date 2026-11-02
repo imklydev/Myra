@@ -1,0 +1,62 @@
+#pragma once
+
+#include <vector>
+#include "../section.h"
+
+struct codeTab
+{
+    std::string text;
+    std::string openedFile = "";
+    int CursorPos = -1; // = the character the cursor is selecting (-1 = begining, before any char)
+    int SelectionStartPos = -1;
+    int selectionLength;
+    bool selectionMode = false;
+    Vector2 offset = {0, 0};
+};
+
+class tabSection : public Section
+{
+
+public:
+    Vector2 pos = {0, 0};
+    Vector2 size = {2000, 30};
+    int textSize = 16;
+    float tabSize = 120;
+    float tabSpacing = 5;
+    std::vector<codeTab> *codeTabs;
+
+    void draw(Vector2 pos_offset, int selectedTab = 0)
+    {
+        SetDrawColor(TABS_SECTION_BG_COLOR);
+        DrawRect(pos, size); // Background (tabs are drawn on top of this)
+
+        for (int i = 0; i < codeTabs->size(); i++)
+        {
+            if (i == selectedTab)
+            {
+                SetDrawColor(TABS_SECTION_SELECTED_TAB_COLOR);
+            }
+            else
+            {
+                SetDrawColor(TABS_SECTION_TAB_COLOR);
+            }
+
+            DrawRect(pos + Vector2{tabSize * i + tabSpacing * i, 0}, {tabSize, size.y});
+
+            if ((*codeTabs)[i].openedFile.empty())
+            {
+                SetDrawColor(TEXT_COLOR);
+                DrawText("Untitled", textSize, pos + Vector2{tabSize * i + tabSpacing * i + 5.0f, 0.0f}, {tabSize, size.y});
+            }
+            else
+            {
+                SetDrawColor(TEXT_COLOR);
+                std::string path = (*codeTabs)[i].openedFile;
+                std::string title = path.substr(path.find_last_of("/\\") + 1);
+                DrawText(title, textSize, pos + Vector2{tabSize * i + tabSpacing * i + 0.0f, 0.0f}, {tabSize, size.y});
+            }
+        }
+    }
+};
+
+tabSection TabSecton;

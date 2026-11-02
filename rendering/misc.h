@@ -16,6 +16,11 @@ struct Vector2
     {
         return {x + other.x, y + other.y};
     }
+
+    Vector2 operator-(const Vector2 &other) const
+    {
+        return {x - other.x, y - other.y};
+    }
 };
 
 struct Vector2i
@@ -30,5 +35,10 @@ struct Vector2i
     Vector2i operator+(const Vector2i &other) const
     {
         return {x + other.x, y + other.y};
+    }
+
+    Vector2i operator-(const Vector2i &other) const
+    {
+        return {x - other.x, y - other.y};
     }
 };

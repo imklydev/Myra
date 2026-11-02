@@ -9,96 +9,94 @@
 
 #include "../sections/lineNumbersSection.h"
 #include "../sections/codeSection.h"
+#include "../sections/tabSection.h"
 
 #include "../../third_party/tinyfiledialogs.h"
 
 class codeEditorScreen : public Screen
 {
 private:
-    const char *openedFile = nullptr;
-    int CursorPos = -1; // = the character the cursor is selecting (-1 = begining, before any char)
-    int SelectionStartPos = -1;
-    int selectionLength;
-    bool selectionMode = false;
-    Vector2 offset = {0, 0}; // for scrolling
+    int currentTab = 0;
+    codeTab example = {"", "", -1, -1, 0, false, Vector2(0, 0)};
+    std::vector<codeTab> codeTabs = {example};
 
     void EraseCodePointAtCursorPos()
     {
-        if (CodeSection.text.empty())
+        if (codeTabs[currentTab].text.empty())
         {
             return;
         }
 
-        if (CursorPos < 0)
+        if (codeTabs[currentTab].CursorPos < 0)
         {
             return;
         }
 
-        size_t index = CursorPos;
+        size_t index = codeTabs[currentTab].CursorPos;
 
         size_t codePointSize = 1;
 
         while (index > 0 &&
-               (static_cast<unsigned char>(CodeSection.text[index]) & 0xC0) == 0x80)
+               (static_cast<unsigned char>(codeTabs[currentTab].text[index]) & 0xC0) == 0x80)
         {
             --index;
             codePointSize += 1;
         }
 
-        CodeSection.text.erase(index, codePointSize);
+        codeTabs[currentTab].text.erase(index, codePointSize);
 
         // Find the previous code point
         if (index == 0)
         {
-            CursorPos = -1;
+            codeTabs[currentTab].CursorPos = -1;
         }
         else
         {
-            CursorPos--;
+            codeTabs[currentTab].CursorPos--;
 
-            while (CursorPos > 0 &&
-                   (static_cast<unsigned char>(CodeSection.text[CursorPos]) & 0xC0) == 0x80)
+            while (codeTabs[currentTab].CursorPos > 0 &&
+                   (static_cast<unsigned char>(codeTabs[currentTab].text[codeTabs[currentTab].CursorPos]) & 0xC0) == 0x80)
             {
-                CursorPos--;
+                codeTabs[currentTab].CursorPos--;
             }
         }
     }
 
     void MoveCursorLeft()
     {
-        if (CursorPos < 0)
+        if (codeTabs[currentTab].CursorPos < 0)
         {
             return;
         }
 
-        CursorPos--;
+        codeTabs[currentTab].CursorPos--;
 
-        while (CursorPos > 0 &&
-               (static_cast<unsigned char>(CodeSection.text[CursorPos]) & 0xC0) == 0x80)
+        while (codeTabs[currentTab].CursorPos > 0 &&
+               (static_cast<unsigned char>(codeTabs[currentTab].text[codeTabs[currentTab].CursorPos]) & 0xC0) == 0x80)
         {
-            CursorPos--;
+            codeTabs[currentTab].CursorPos--;
         }
     }
 
     void MoveCursorRight()
     {
-        if (CursorPos >= static_cast<int>(CodeSection.text.size() - 1))
+        if (codeTabs[currentTab].CursorPos >= static_cast<int>(codeTabs[currentTab].text.size() - 1))
         {
             return;
         }
 
-        CursorPos++;
+        codeTabs[currentTab].CursorPos++;
 
-        while (CursorPos < CodeSection.text.size() &&
-               (static_cast<unsigned char>(CodeSection.text[CursorPos]) & 0xC0) == 0x80)
+        while (codeTabs[currentTab].CursorPos < codeTabs[currentTab].text.size() &&
+               (static_cast<unsigned char>(codeTabs[currentTab].text[codeTabs[currentTab].CursorPos]) & 0xC0) == 0x80)
         {
-            CursorPos++;
+            codeTabs[currentTab].CursorPos++;
         }
     }
 
     void OpenFile()
     {
-        openedFile = tinyfd_openFileDialog(
+        char *path = tinyfd_openFileDialog(
             "Open file...",
             "../",
             0,
@@ -106,16 +104,23 @@ private:
             "text files",
             0);
 
-        if (openedFile != nullptr)
+        if (path == nullptr)
         {
-            std::ifstream file(openedFile);
+            return;
+        }
+
+        codeTabs[currentTab].openedFile = path;
+
+        if (!codeTabs[currentTab].openedFile.empty())
+        {
+            std::ifstream file(codeTabs[currentTab].openedFile);
 
             std::string line;
-            CodeSection.text = "";
+            codeTabs[currentTab].text = "";
             while (std::getline(file, line))
             {
-                CodeSection.text += line;
-                CodeSection.text += "\n";
+                codeTabs[currentTab].text += line;
+                codeTabs[currentTab].text += "\n";
             }
 
             file.close();
@@ -124,19 +129,26 @@ private:
 
     void SaveFile()
     {
-        if (openedFile == nullptr)
+        if (codeTabs[currentTab].openedFile.empty())
         {
-            openedFile = tinyfd_saveFileDialog(
+            char *path = tinyfd_saveFileDialog(
                 "Save file...",
                 "../",
                 0,
                 nullptr,
-                "text files");
+                nullptr);
+
+            if (path == nullptr)
+            {
+                return;
+            }
+
+            codeTabs[currentTab].openedFile = path;
         }
 
-        std::ofstream file(openedFile);
+        std::ofstream file(codeTabs[currentTab].openedFile);
 
-        file << CodeSection.text;
+        file << codeTabs[currentTab].text;
 
         file.close();
     }
@@ -144,7 +156,7 @@ private:
     int CalcCurrentLineCount()
     {
         int lineCount = 1;
-        for (char c : CodeSection.text)
+        for (char c : codeTabs[currentTab].text)
         {
             if (c == '\n')
             {
@@ -156,36 +168,36 @@ private:
 
     size_t GetLineStart(size_t pos) const
     {
-        while (pos > 0 && CodeSection.text[pos - 1] != '\n')
+        while (pos > 0 && codeTabs[currentTab].text[pos - 1] != '\n')
             pos--;
         return pos;
     }
 
     size_t GetLineEnd(size_t pos) const
     {
-        while (pos < CodeSection.text.size() && CodeSection.text[pos] != '\n')
+        while (pos < codeTabs[currentTab].text.size() && codeTabs[currentTab].text[pos] != '\n')
             pos++;
         return pos;
     }
 
     void MoveCursorUp()
     {
-        if (CursorPos == -1)
+        if (codeTabs[currentTab].CursorPos == -1)
         {
             return;
         }
 
-        size_t cursor = CursorPos + 1;
+        size_t cursor = codeTabs[currentTab].CursorPos + 1;
 
         int lastCursorColumn = cursor - GetLineStart(cursor);
 
-        CursorPos = GetLineStart(cursor) - 1;
+        codeTabs[currentTab].CursorPos = GetLineStart(cursor) - 1;
 
-        if (CursorPos >= 0)
+        if (codeTabs[currentTab].CursorPos >= 0)
         {
             MoveCursorLeft();
 
-            cursor = CursorPos + 1;
+            cursor = codeTabs[currentTab].CursorPos + 1;
             int currentColumn = cursor - GetLineStart(cursor);
             while (currentColumn > lastCursorColumn)
             {
@@ -198,23 +210,23 @@ private:
 
     void MoveCursorDown()
     {
-        if (CursorPos == -1)
+        if (codeTabs[currentTab].CursorPos == -1)
         {
-            CursorPos = GetLineEnd(CursorPos + 1);
+            codeTabs[currentTab].CursorPos = GetLineEnd(codeTabs[currentTab].CursorPos + 1);
             return;
         }
 
-        size_t cursor = CursorPos + 1;
+        size_t cursor = codeTabs[currentTab].CursorPos + 1;
 
         int lastCursorColumn = cursor - GetLineStart(cursor);
 
-        CursorPos = GetLineEnd(cursor) - 1;
+        codeTabs[currentTab].CursorPos = GetLineEnd(cursor) - 1;
 
-        if (CursorPos < CodeSection.text.size() - 1)
+        if (codeTabs[currentTab].CursorPos < codeTabs[currentTab].text.size() - 1)
         {
             MoveCursorRight();
 
-            cursor = CursorPos + 1;
+            cursor = codeTabs[currentTab].CursorPos + 1;
 
             int currentLineLength = GetLineEnd(cursor) - GetLineStart(cursor);
 
@@ -225,7 +237,7 @@ private:
 
             if (currentLineLength < lastCursorColumn)
             {
-                CursorPos = GetLineEnd(cursor) - 1;
+                codeTabs[currentTab].CursorPos = GetLineEnd(cursor) - 1;
                 return;
             }
 
@@ -234,7 +246,7 @@ private:
             {
                 currentColumn++;
                 MoveCursorRight();
-                cursor = CursorPos + 1;
+                cursor = codeTabs[currentTab].CursorPos + 1;
             }
         }
     }
@@ -243,24 +255,24 @@ private:
     {
         TTF_Font *font = cachedFonts[FONT + "_" + std::to_string(16)];
 
-        size_t lineStart = GetLineStart(CursorPos + 1);
+        size_t lineStart = GetLineStart(codeTabs[currentTab].CursorPos + 1);
 
         int w, h;
-        TTF_GetStringSize(font, CodeSection.text.substr(lineStart, CursorPos + 1 - lineStart).c_str(), 0, &w, &h);
+        TTF_GetStringSize(font, codeTabs[currentTab].text.substr(lineStart, codeTabs[currentTab].CursorPos + 1 - lineStart).c_str(), 0, &w, &h);
 
         int lineHeight = TTF_GetFontLineSkip(font);
 
-        int line = std::count(CodeSection.text.begin(), CodeSection.text.begin() + lineStart, '\n');
+        int line = std::count(codeTabs[currentTab].text.begin(), codeTabs[currentTab].text.begin() + lineStart, '\n');
 
-        DrawRect(Vector2(w + CodeSection.pos.x, line * lineHeight + offset.y), Vector2(2, h));
+        DrawRect(Vector2(w + CodeSection.pos.x, line * lineHeight) + Vector2(0, TabSecton.size.y) + codeTabs[currentTab].offset, Vector2(2, h));
     }
 
     void DrawSelection()
     {
-        const std::string &text = CodeSection.text;
+        const std::string &text = codeTabs[currentTab].text;
         const size_t size = text.size();
 
-        if (size == 0 || SelectionStartPos == CursorPos)
+        if (size == 0 || codeTabs[currentTab].SelectionStartPos == codeTabs[currentTab].CursorPos)
             return;
 
         TTF_Font *font = cachedFonts[FONT + "_" + std::to_string(16)];
@@ -271,8 +283,8 @@ private:
 
         // A cursor position p means "after character p", so the boundary index is p + 1.
         // Selection is the half-open range [selBegin, selEnd).
-        long long a = static_cast<long long>(std::min(SelectionStartPos, CursorPos)) + 1;
-        long long b = static_cast<long long>(std::max(SelectionStartPos, CursorPos)) + 1;
+        long long a = static_cast<long long>(std::min(codeTabs[currentTab].SelectionStartPos, codeTabs[currentTab].CursorPos)) + 1;
+        long long b = static_cast<long long>(std::max(codeTabs[currentTab].SelectionStartPos, codeTabs[currentTab].CursorPos)) + 1;
 
         a = std::clamp<long long>(a, 0, static_cast<long long>(size));
         b = std::clamp<long long>(b, 0, static_cast<long long>(size));
@@ -303,7 +315,7 @@ private:
             const size_t segBegin = std::max(selBegin, lineStart);
             const size_t segEnd = std::min(selEnd, lineEnd);
 
-            const float y = line * lineHeight + offset.y;
+            const float y = line * lineHeight + codeTabs[currentTab].offset.y;
 
             if (segBegin < segEnd)
             {
@@ -314,10 +326,10 @@ private:
                 const int selW = measure(sel);
 
                 SetDrawColor(SELECTION_BG_COLOR);
-                DrawRect(Vector2(x, y), Vector2(selW, lineHeight));
+                DrawRect(Vector2(x, y) + Vector2(0, TabSecton.size.y), Vector2(selW, lineHeight));
 
                 SetDrawColor({0, 0, 0, 255});
-                DrawText(sel, 16, Vector2(x, y));
+                DrawText(sel, 16, Vector2(x, y) + Vector2(0, TabSecton.size.y));
                 SetDrawColor(TEXT_COLOR);
             }
 
@@ -330,7 +342,7 @@ private:
             {
                 const float x = CodeSection.pos.x + measure(text.substr(lineStart, lineEnd - lineStart));
                 SetDrawColor(SELECTION_BG_COLOR);
-                DrawRect(Vector2(x, y), Vector2(6, lineHeight));
+                DrawRect(Vector2(x, y) + Vector2(0, TabSecton.size.y), Vector2(6, lineHeight));
                 SetDrawColor(TEXT_COLOR);
             }
 
@@ -342,18 +354,18 @@ private:
 
     void HandleBackspace()
     {
-        if (selectionMode && CursorPos != SelectionStartPos)
+        if (codeTabs[currentTab].selectionMode && codeTabs[currentTab].CursorPos != codeTabs[currentTab].SelectionStartPos)
         {
 
-            CodeSection.text.erase(std::min(SelectionStartPos + 1, CursorPos + 1),
-                                   selectionLength);
+            codeTabs[currentTab].text.erase(std::min(codeTabs[currentTab].SelectionStartPos + 1, codeTabs[currentTab].CursorPos + 1),
+                                            codeTabs[currentTab].selectionLength);
 
-            if (CursorPos > SelectionStartPos)
+            if (codeTabs[currentTab].CursorPos > codeTabs[currentTab].SelectionStartPos)
             {
-                CursorPos = SelectionStartPos;
+                codeTabs[currentTab].CursorPos = codeTabs[currentTab].SelectionStartPos;
             }
 
-            selectionMode = false;
+            codeTabs[currentTab].selectionMode = false;
         }
         else
         {
@@ -363,25 +375,25 @@ private:
 
     void HandleDelete()
     {
-        if (selectionMode && CursorPos != SelectionStartPos)
+        if (codeTabs[currentTab].selectionMode && codeTabs[currentTab].CursorPos != codeTabs[currentTab].SelectionStartPos)
         {
 
-            CodeSection.text.erase(std::min(SelectionStartPos + 1, CursorPos + 1),
-                                   selectionLength);
+            codeTabs[currentTab].text.erase(std::min(codeTabs[currentTab].SelectionStartPos + 1, codeTabs[currentTab].CursorPos + 1),
+                                            codeTabs[currentTab].selectionLength);
 
-            if (CursorPos > SelectionStartPos)
+            if (codeTabs[currentTab].CursorPos > codeTabs[currentTab].SelectionStartPos)
             {
-                CursorPos = SelectionStartPos;
+                codeTabs[currentTab].CursorPos = codeTabs[currentTab].SelectionStartPos;
             }
 
-            selectionMode = false;
+            codeTabs[currentTab].selectionMode = false;
         }
         else
         {
-            int CursorPosSnapshot = CursorPos;
+            int CursorPosSnapshot = codeTabs[currentTab].CursorPos;
             MoveCursorRight();
 
-            if (CursorPosSnapshot == CursorPos)
+            if (CursorPosSnapshot == codeTabs[currentTab].CursorPos)
             {
                 // the cursor is at the end of the text, so delete should do nothing
             }
@@ -395,36 +407,141 @@ private:
 public:
     void update() override
     {
+
+        TabSecton.codeTabs = &codeTabs;
+
         if (!Keyboard.text.empty())
         {
-            if (selectionMode)
+            if (codeTabs[currentTab].selectionMode)
             {
                 HandleBackspace();
             }
 
-            CodeSection.text.insert(CursorPos + 1, Keyboard.text);
+            codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, Keyboard.text);
 
-            CursorPos += Keyboard.text.size();
+            codeTabs[currentTab].CursorPos += Keyboard.text.size();
+        }
+
+        // CTRL+O open file
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_O)
+        {
+            OpenFile();
+        }
+
+        // CTRL+S save file
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_S)
+        {
+            SaveFile();
+        }
+
+        // CTRL+V paste text
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_V)
+        {
+            char *pastedText = SDL_GetClipboardText();
+
+            codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, pastedText);
+
+            codeTabs[currentTab].CursorPos += strlen(pastedText);
+        }
+
+        // CTRL+C copy text
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_C)
+        {
+            std::string copiedText = codeTabs[currentTab].text.substr(std::min(codeTabs[currentTab].SelectionStartPos + 1, codeTabs[currentTab].CursorPos + 1),
+                                                                      codeTabs[currentTab].selectionLength);
+            SDL_SetClipboardText(copiedText.c_str());
+        }
+
+        // CTRL+X cut text
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_X)
+        {
+            std::string copiedText = codeTabs[currentTab].text.substr(std::min(codeTabs[currentTab].SelectionStartPos + 1, codeTabs[currentTab].CursorPos + 1),
+                                                                      codeTabs[currentTab].selectionLength);
+            SDL_SetClipboardText(copiedText.c_str());
+            HandleBackspace();
+        }
+
+        // CTRL+A cut text
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_A)
+        {
+            codeTabs[currentTab].selectionMode = true;
+            codeTabs[currentTab].CursorPos = codeTabs[currentTab].text.size();
+            codeTabs[currentTab].SelectionStartPos = -1;
+        }
+
+        // CTRL+ALT+RIGHT_ARROW move to right tab
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) &&
+            (IsKeyPressed[SDL_SCANCODE_LALT] || IsKeyPressed[SDL_SCANCODE_RALT]) &&
+            Keyboard.key == SDLK_RIGHT)
+        {
+            if (codeTabs.size() > currentTab + 1)
+            {
+                currentTab = currentTab + 1;
+                return; // a crappy fix to not make the cursor move when moving tabs
+            }
+        }
+
+        // CTRL+ALT+LEFT_ARROW move to left tab
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) &&
+            (IsKeyPressed[SDL_SCANCODE_LALT] || IsKeyPressed[SDL_SCANCODE_RALT]) &&
+            Keyboard.key == SDLK_LEFT)
+        {
+            if (currentTab > 0)
+            {
+                currentTab--;
+                return; // a crappy fix to not make the cursor move when moving tabs
+            }
+        }
+
+        // CTRL+N new file
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) &&
+            Keyboard.key == SDLK_N)
+        {
+            codeTabs.push_back({"", "", -1, -1, 0, false, Vector2(0, 0)});
+            currentTab = codeTabs.size() - 1;
+        }
+
+        // CTRL+Q close current tab (and save too)
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) &&
+            Keyboard.key == SDLK_Q)
+        {
+            if (codeTabs.size() > 1)
+            {
+                if (!codeTabs[currentTab].openedFile.empty())
+                {
+                    SaveFile();
+                }
+
+                if (currentTab + 1 < codeTabs.size())
+                {
+                    codeTabs.erase(codeTabs.begin() + currentTab);
+                }
+                else
+                {
+                    codeTabs.erase(codeTabs.begin() + currentTab);
+                    currentTab--;
+                }
+            }
         }
 
         // SHIFT select text
-        if (!selectionMode && (IsKeyPressed[SDL_SCANCODE_LSHIFT] || IsKeyPressed[SDL_SCANCODE_RSHIFT]) && Keyboard.move != "none")
+        if (!codeTabs[currentTab].selectionMode && (IsKeyPressed[SDL_SCANCODE_LSHIFT] || IsKeyPressed[SDL_SCANCODE_RSHIFT]) && Keyboard.move != "none")
         {
-            selectionMode = true;
-            SelectionStartPos = CursorPos;
+            codeTabs[currentTab].selectionMode = true;
+            codeTabs[currentTab].SelectionStartPos = codeTabs[currentTab].CursorPos;
         }
 
         if ((!(Keyboard.text.empty())) ||
             (!(IsKeyPressed[SDL_SCANCODE_LSHIFT] || IsKeyPressed[SDL_SCANCODE_RSHIFT]) && Keyboard.move != "none"))
         {
-            selectionMode = false;
+            codeTabs[currentTab].selectionMode = false;
         }
 
-        if (selectionMode)
+        if (codeTabs[currentTab].selectionMode)
         {
-            selectionLength = std::abs((SelectionStartPos + 1) - (CursorPos + 1));
-            // std::cout << CodeSection.text.substr(std::min(SelectionStartPos + 1, CursorPos + 1),
-            //                                      selectionLength);
+            codeTabs[currentTab].selectionLength = std::abs((codeTabs[currentTab].SelectionStartPos + 1) - (codeTabs[currentTab].CursorPos + 1));
+            // std::cout << codeTabs[currentTab].text.substr(std::min(codeTabs[currentTab].SelectionStartPos + 1, codeTabs[currentTab].CursorPos + 1),
+            //                                      codeTabs[currentTab].selectionLength);
         }
 
         // Cursor movement
@@ -447,11 +564,11 @@ public:
 
         if (Keyboard.enter)
         {
-            if (selectionMode)
+            if (codeTabs[currentTab].selectionMode)
             {
                 HandleBackspace();
             }
-            CodeSection.text.insert(CursorPos + 1, "\n");
+            codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, "\n");
             MoveCursorRight();
         }
 
@@ -463,65 +580,18 @@ public:
                 tabString += ' ';
             }
 
-            CodeSection.text.insert(CursorPos + 1, tabString);
+            codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, tabString);
 
-            CursorPos += tabString.size();
-        }
-
-        // CTRL+O open file
-        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_O)
-        {
-            OpenFile();
-        }
-
-        // CTRL+S save file
-        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_S)
-        {
-            SaveFile();
-        }
-
-        // CTRL+V paste text
-        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_V)
-        {
-            char *pastedText = SDL_GetClipboardText();
-
-            CodeSection.text.insert(CursorPos + 1, pastedText);
-
-            CursorPos += strlen(pastedText);
-        }
-
-        // CTRL+C copy text
-        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_C)
-        {
-            std::string copiedText = CodeSection.text.substr(std::min(SelectionStartPos + 1, CursorPos + 1),
-                                                             selectionLength);
-            SDL_SetClipboardText(copiedText.c_str());
-        }
-
-        // CTRL+X cut text
-        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_X)
-        {
-            std::string copiedText = CodeSection.text.substr(std::min(SelectionStartPos + 1, CursorPos + 1),
-                                                             selectionLength);
-            SDL_SetClipboardText(copiedText.c_str());
-            HandleBackspace();
-        }
-
-        // CTRL+A cut text
-        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_A)
-        {
-            selectionMode = true;
-            CursorPos = CodeSection.text.size();
-            SelectionStartPos = -1;
+            codeTabs[currentTab].CursorPos += tabString.size();
         }
 
         if (Mouse.scroll)
         {
-            offset.y += Mouse.scroll * SCROLL_SENSITIVITY;
+            codeTabs[currentTab].offset.y += Mouse.scroll * SCROLL_SENSITIVITY;
 
-            if (offset.y > 0)
+            if (codeTabs[currentTab].offset.y > 0)
             {
-                offset.y = 0;
+                codeTabs[currentTab].offset.y = 0;
             }
         }
 
@@ -538,18 +608,22 @@ public:
         int lineCount = CalcCurrentLineCount();
 
         LineNumbersSection.setLineCount(lineCount);
+
+        CodeSection.text = codeTabs[currentTab].text;
     }
 
     void draw() override
     {
-        LineNumbersSection.draw(offset);
-        CodeSection.draw(offset);
+        LineNumbersSection.draw(codeTabs[currentTab].offset + Vector2(0, TabSecton.size.y));
+        CodeSection.draw(codeTabs[currentTab].offset + Vector2(0, TabSecton.size.y));
 
-        if (selectionMode && selectionLength > 0)
+        if (codeTabs[currentTab].selectionMode && codeTabs[currentTab].selectionLength > 0)
         {
             DrawSelection();
         }
         DrawCursor();
+
+        TabSecton.draw(Vector2{0, 0}, currentTab);
     }
 };
 
