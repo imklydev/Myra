@@ -17,8 +17,8 @@ class codeEditorScreen : public Screen
 {
 private:
     int currentTab = 0;
-    codeTab example = {"", "", -1, -1, 0, false, Vector2(0, 0)};
-    std::vector<codeTab> codeTabs = {example};
+    codeTab defaultTab = {{{"", -1}}, 0, "", "", -1, -1, 0, false, Vector2(0, 0)};
+    std::vector<codeTab> codeTabs = {defaultTab};
 
     void EraseCodePointAtCursorPos()
     {
@@ -404,6 +404,140 @@ private:
         }
     }
 
+    void PasteText()
+    {
+        char *pastedText = SDL_GetClipboardText();
+
+        codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, pastedText);
+
+        codeTabs[currentTab].CursorPos += strlen(pastedText);
+    }
+
+    void CopyText()
+    {
+        std::string copiedText = codeTabs[currentTab].text.substr(std::min(codeTabs[currentTab].SelectionStartPos + 1, codeTabs[currentTab].CursorPos + 1),
+                                                                  codeTabs[currentTab].selectionLength);
+        SDL_SetClipboardText(copiedText.c_str());
+    }
+
+    void CutText()
+    {
+        std::string copiedText = codeTabs[currentTab].text.substr(std::min(codeTabs[currentTab].SelectionStartPos + 1, codeTabs[currentTab].CursorPos + 1),
+                                                                  codeTabs[currentTab].selectionLength);
+        SDL_SetClipboardText(copiedText.c_str());
+        HandleBackspace();
+    }
+
+    void SelectAllText()
+    {
+        codeTabs[currentTab].selectionMode = true;
+        codeTabs[currentTab].CursorPos = codeTabs[currentTab].text.size();
+        codeTabs[currentTab].SelectionStartPos = -1;
+    }
+
+    void MoveToNextTab()
+    {
+        if (codeTabs.size() > currentTab + 1)
+        {
+            currentTab = currentTab + 1;
+            MoveCursorLeft(); // Somehow even crappier fixto not make the cursor move when moving tabs
+                              //, but fixes the screen jittering
+        }
+    }
+
+    void MoveToPreviousTab()
+    {
+        if (currentTab > 0)
+        {
+            currentTab--;
+            MoveCursorRight(); // Somehow even crappier fixto not make the cursor move when moving tabs
+                               //, but fixes the screen jittering
+        }
+    }
+
+    void NewTab()
+    {
+        codeTabs.push_back({{{"", -1}}, 0, "", "", -1, -1, 0, false, Vector2(0, 0)});
+        currentTab = codeTabs.size() - 1;
+    }
+
+    void CloseCurrentTab()
+    {
+        if (codeTabs.size() > 1)
+        {
+            if (!codeTabs[currentTab].openedFile.empty())
+            {
+                SaveFile();
+            }
+
+            if (currentTab + 1 < codeTabs.size())
+            {
+                codeTabs.erase(codeTabs.begin() + currentTab);
+            }
+            else
+            {
+                codeTabs.erase(codeTabs.begin() + currentTab);
+                currentTab--;
+            }
+        }
+    }
+
+    void SaveTextSnapshot()
+    {
+        codeTabs[currentTab].textSnapshots.push_back({codeTabs[currentTab].text, codeTabs[currentTab].CursorPos});
+        codeTabs[currentTab].undoHistoryIndex = codeTabs[currentTab].textSnapshots.size() - 1; // ehh
+    }
+
+    void Undo()
+    {
+        if (codeTabs[currentTab].textSnapshots.size() <= 0 || codeTabs[currentTab].undoHistoryIndex < 0)
+        {
+            return;
+        }
+
+        codeTabs[currentTab].text = codeTabs[currentTab].textSnapshots[codeTabs[currentTab].undoHistoryIndex].text;
+        codeTabs[currentTab].CursorPos = codeTabs[currentTab].textSnapshots[codeTabs[currentTab].undoHistoryIndex].CursorPos;
+
+        codeTabs[currentTab].undoHistoryIndex--;
+        std::cout << codeTabs[currentTab].undoHistoryIndex << " " << codeTabs[currentTab].textSnapshots.size() - 1 << "\n";
+    }
+
+    void Redo()
+    {
+        if (codeTabs[currentTab].undoHistoryIndex >= codeTabs[currentTab].textSnapshots.size() - 1)
+        {
+            return;
+        }
+
+        codeTabs[currentTab].undoHistoryIndex++;
+
+        codeTabs[currentTab].text = codeTabs[currentTab].textSnapshots[codeTabs[currentTab].undoHistoryIndex].text;
+        codeTabs[currentTab].CursorPos = codeTabs[currentTab].textSnapshots[codeTabs[currentTab].undoHistoryIndex].CursorPos;
+    }
+
+    void WriteTab()
+    {
+        std::string tabString = "";
+        for (int i = 0; i < TAB_SIZE; i++)
+        {
+            tabString += ' ';
+        }
+
+        codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, tabString);
+
+        codeTabs[currentTab].CursorPos += tabString.size();
+    }
+
+    void HandleEnter()
+    {
+        if (codeTabs[currentTab].selectionMode)
+        {
+            HandleBackspace();
+        }
+        codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, "\n");
+        MoveCursorRight();
+    }
+
 public:
     void update() override
     {
@@ -417,8 +551,13 @@ public:
                 HandleBackspace();
             }
 
-            codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, Keyboard.text);
+            // for now, save text to previousText for ctrl-z if space is pressed
+            if (Keyboard.text.find(' ') != std::string::npos)
+            {
+                SaveTextSnapshot();
+            }
 
+            codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, Keyboard.text);
             codeTabs[currentTab].CursorPos += Keyboard.text.size();
         }
 
@@ -437,36 +576,27 @@ public:
         // CTRL+V paste text
         if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_V)
         {
-            char *pastedText = SDL_GetClipboardText();
-
-            codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, pastedText);
-
-            codeTabs[currentTab].CursorPos += strlen(pastedText);
+            SaveTextSnapshot();
+            PasteText();
         }
 
         // CTRL+C copy text
         if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_C)
         {
-            std::string copiedText = codeTabs[currentTab].text.substr(std::min(codeTabs[currentTab].SelectionStartPos + 1, codeTabs[currentTab].CursorPos + 1),
-                                                                      codeTabs[currentTab].selectionLength);
-            SDL_SetClipboardText(copiedText.c_str());
+            CopyText();
         }
 
         // CTRL+X cut text
         if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_X)
         {
-            std::string copiedText = codeTabs[currentTab].text.substr(std::min(codeTabs[currentTab].SelectionStartPos + 1, codeTabs[currentTab].CursorPos + 1),
-                                                                      codeTabs[currentTab].selectionLength);
-            SDL_SetClipboardText(copiedText.c_str());
-            HandleBackspace();
+            SaveTextSnapshot();
+            CutText();
         }
 
         // CTRL+A cut text
         if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_A)
         {
-            codeTabs[currentTab].selectionMode = true;
-            codeTabs[currentTab].CursorPos = codeTabs[currentTab].text.size();
-            codeTabs[currentTab].SelectionStartPos = -1;
+            SelectAllText();
         }
 
         // CTRL+ALT+RIGHT_ARROW move to right tab
@@ -474,11 +604,7 @@ public:
             (IsKeyPressed[SDL_SCANCODE_LALT] || IsKeyPressed[SDL_SCANCODE_RALT]) &&
             Keyboard.key == SDLK_RIGHT)
         {
-            if (codeTabs.size() > currentTab + 1)
-            {
-                currentTab = currentTab + 1;
-                return; // a crappy fix to not make the cursor move when moving tabs
-            }
+            MoveToNextTab();
         }
 
         // CTRL+ALT+LEFT_ARROW move to left tab
@@ -486,42 +612,35 @@ public:
             (IsKeyPressed[SDL_SCANCODE_LALT] || IsKeyPressed[SDL_SCANCODE_RALT]) &&
             Keyboard.key == SDLK_LEFT)
         {
-            if (currentTab > 0)
-            {
-                currentTab--;
-                return; // a crappy fix to not make the cursor move when moving tabs
-            }
+            MoveToPreviousTab();
         }
 
-        // CTRL+N new file
+        // CTRL+N new tab/file
         if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) &&
             Keyboard.key == SDLK_N)
         {
-            codeTabs.push_back({"", "", -1, -1, 0, false, Vector2(0, 0)});
-            currentTab = codeTabs.size() - 1;
+            NewTab();
         }
 
         // CTRL+Q close current tab (and save too)
         if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) &&
             Keyboard.key == SDLK_Q)
         {
-            if (codeTabs.size() > 1)
-            {
-                if (!codeTabs[currentTab].openedFile.empty())
-                {
-                    SaveFile();
-                }
+            CloseCurrentTab();
+        }
 
-                if (currentTab + 1 < codeTabs.size())
-                {
-                    codeTabs.erase(codeTabs.begin() + currentTab);
-                }
-                else
-                {
-                    codeTabs.erase(codeTabs.begin() + currentTab);
-                    currentTab--;
-                }
-            }
+        // CTRL+Z undo
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) &&
+            Keyboard.key == SDLK_Z)
+        {
+            Undo();
+        }
+
+        // CTRL+Y undo
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) &&
+            Keyboard.key == SDLK_Y)
+        {
+            Redo();
         }
 
         // SHIFT select text
@@ -564,25 +683,13 @@ public:
 
         if (Keyboard.enter)
         {
-            if (codeTabs[currentTab].selectionMode)
-            {
-                HandleBackspace();
-            }
-            codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, "\n");
-            MoveCursorRight();
+            SaveTextSnapshot();
+            HandleEnter();
         }
 
         if (Keyboard.tab)
         {
-            std::string tabString = "";
-            for (int i = 0; i < TAB_SIZE; i++)
-            {
-                tabString += ' ';
-            }
-
-            codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, tabString);
-
-            codeTabs[currentTab].CursorPos += tabString.size();
+            WriteTab();
         }
 
         if (Mouse.scroll)

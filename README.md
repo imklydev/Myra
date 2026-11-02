@@ -3,14 +3,16 @@
 # Keybinds:
 **CTRL+O** - Open a file  
 **CTRL+S** - Save a file  
-**CTRL+V** - Paste text  
 **CTRL+C** - Copy selected text  
+**CTRL+V** - Paste text  
 **CTRL+X** - Cut selected text  
 **CTRL+A** - Select all text  
 **CTRL+ALT+RIGHT** - Switch to next tab  
 **CTRL+ALT+LEFT** - Switch to previous tab  
 **CTRL+N** - Create new file/tab  
 **CTRL+Q** - Close current tab
+**CTRL+Z** - Undo
+**CTRL+Y** - Redo
 
 
 ## Building Myra from source:

@@ -3,11 +3,19 @@
 #include <vector>
 #include "../section.h"
 
-struct codeTab
+struct textSnapshot
 {
     std::string text;
+    int CursorPos = -1; // the character the cursor is selecting (-1 = begining, before any char)
+};
+
+struct codeTab
+{
+    std::vector<textSnapshot> textSnapshots; // for ctrl z
+    int undoHistoryIndex = 0;
+    std::string text;
     std::string openedFile = "";
-    int CursorPos = -1; // = the character the cursor is selecting (-1 = begining, before any char)
+    int CursorPos = -1; // the character the cursor is selecting (-1 = begining, before any char)
     int SelectionStartPos = -1;
     int selectionLength;
     bool selectionMode = false;
