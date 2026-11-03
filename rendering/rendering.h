@@ -1,11 +1,14 @@
 #pragma once
 
-
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
 #include "drawing.h"
+
+// Some usefull stuff
+extern int ScreenWidth;
+extern int ScreenHeight;
 
 // Rendering related stuff
 extern SDL_Window *window;

@@ -3,18 +3,22 @@
 #include "mouse.h"
 
 #include "screens/codeEditorScreen.h"
+#include "screens/myraScreen.h"
 
 int main()
 {
     InitRenderingBackend();
 
     CreateSDLWindow("Myra", 800, 800);
+    currentScreen = &MyraScreen;
 
     SDL_Event event;
     bool running = true;
 
     while (running)
     {
+        nextScreen = currentScreen;
+        SDL_GetWindowSize(window, &ScreenWidth, &ScreenHeight);
         BeginKeyboardFrame();
         BeginMouseFrame();
 
@@ -37,9 +41,10 @@ int main()
         SetDrawColor(BG_COLOR);
         SDL_RenderClear(renderer);
 
-        CodeEditorScreen.update();
-        CodeEditorScreen.draw();
+        currentScreen->update();
+        currentScreen->draw();
 
+        ActuallySetCurrentScreen();
         SDL_RenderPresent(renderer);
         SDL_Delay(16);
     }

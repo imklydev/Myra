@@ -17,6 +17,7 @@ void DrawRect(Vector2 pos, Vector2 size, bool filled = true);
 
 // Text
 extern std::unordered_map<std::string, TTF_Font *> cachedFonts;
+extern TTF_Font *GetFont(int textSize);
 
 void DrawText(const std::string &text, int textSize, Vector2 pos, Vector2 size = {-1, -1});
 

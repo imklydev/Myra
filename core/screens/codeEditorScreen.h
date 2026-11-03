@@ -168,6 +168,7 @@ private:
 
     size_t GetLineStart(size_t pos) const
     {
+
         while (pos > 0 && codeTabs[currentTab].text[pos - 1] != '\n')
             pos--;
         return pos;
@@ -369,7 +370,32 @@ private:
         }
         else
         {
-            EraseCodePointAtCursorPos();
+            int cursor = codeTabs[currentTab].CursorPos;
+            bool deletingATab = true;
+            for (int i = 0; i < TAB_SIZE; i++)
+            {
+                if (cursor < 0)
+                    break;
+
+                if (codeTabs[currentTab].text[cursor] != ' ')
+                {
+                    deletingATab = false;
+                    break;
+                }
+                cursor--;
+            }
+
+            if (deletingATab)
+            {
+                for (int i = 0; i < TAB_SIZE; i++)
+                {
+                    EraseCodePointAtCursorPos();
+                }
+            }
+            else
+            {
+                EraseCodePointAtCursorPos();
+            }
         }
     }
 
@@ -528,20 +554,63 @@ private:
         codeTabs[currentTab].CursorPos += tabString.size();
     }
 
+    int GetLineStartSpacing(int pos)
+    {
+        if (pos == -1)
+        {
+            return 0;
+        }
+        int lineStart = GetLineStart(pos);
+        int startSpacing = 0;
+
+        while (codeTabs[currentTab].text[lineStart] == ' ')
+        {
+            startSpacing++;
+            lineStart++;
+        }
+
+        return startSpacing;
+    }
+
     void HandleEnter()
     {
         if (codeTabs[currentTab].selectionMode)
         {
             HandleBackspace();
         }
+        std::string lineStartSpacing = std::string(GetLineStartSpacing((codeTabs[currentTab].CursorPos)), ' ');
+
         codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, "\n");
         MoveCursorRight();
+
+        codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, lineStartSpacing);
+        codeTabs[currentTab].CursorPos += lineStartSpacing.size();
+    }
+
+    void HandleSelectingText()
+    {
+        // SHIFT select text
+        if (!codeTabs[currentTab].selectionMode && (IsKeyPressed[SDL_SCANCODE_LSHIFT] || IsKeyPressed[SDL_SCANCODE_RSHIFT]) && Keyboard.move != "none")
+        {
+            codeTabs[currentTab].selectionMode = true;
+            codeTabs[currentTab].SelectionStartPos = codeTabs[currentTab].CursorPos;
+        }
+
+        if ((!(Keyboard.text.empty())) ||
+            (!(IsKeyPressed[SDL_SCANCODE_LSHIFT] || IsKeyPressed[SDL_SCANCODE_RSHIFT]) && Keyboard.move != "none"))
+        {
+            codeTabs[currentTab].selectionMode = false;
+        }
+
+        if (codeTabs[currentTab].selectionMode)
+        {
+            codeTabs[currentTab].selectionLength = std::abs((codeTabs[currentTab].SelectionStartPos + 1) - (codeTabs[currentTab].CursorPos + 1));
+        }
     }
 
 public:
     void update() override
     {
-
         TabSecton.codeTabs = &codeTabs;
 
         if (!Keyboard.text.empty())
@@ -559,6 +628,16 @@ public:
 
             codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, Keyboard.text);
             codeTabs[currentTab].CursorPos += Keyboard.text.size();
+
+            // Some standard simple autocompletion quality of life features
+            if (Keyboard.text == "{")
+            {
+                codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, "}");
+            }
+            else if (Keyboard.text == "(")
+            {
+                codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, ")");
+            }
         }
 
         // CTRL+O open file
@@ -644,24 +723,7 @@ public:
         }
 
         // SHIFT select text
-        if (!codeTabs[currentTab].selectionMode && (IsKeyPressed[SDL_SCANCODE_LSHIFT] || IsKeyPressed[SDL_SCANCODE_RSHIFT]) && Keyboard.move != "none")
-        {
-            codeTabs[currentTab].selectionMode = true;
-            codeTabs[currentTab].SelectionStartPos = codeTabs[currentTab].CursorPos;
-        }
-
-        if ((!(Keyboard.text.empty())) ||
-            (!(IsKeyPressed[SDL_SCANCODE_LSHIFT] || IsKeyPressed[SDL_SCANCODE_RSHIFT]) && Keyboard.move != "none"))
-        {
-            codeTabs[currentTab].selectionMode = false;
-        }
-
-        if (codeTabs[currentTab].selectionMode)
-        {
-            codeTabs[currentTab].selectionLength = std::abs((codeTabs[currentTab].SelectionStartPos + 1) - (codeTabs[currentTab].CursorPos + 1));
-            // std::cout << codeTabs[currentTab].text.substr(std::min(codeTabs[currentTab].SelectionStartPos + 1, codeTabs[currentTab].CursorPos + 1),
-            //                                      codeTabs[currentTab].selectionLength);
-        }
+        HandleSelectingText();
 
         // Cursor movement
         if (Keyboard.move == "left")
@@ -692,6 +754,31 @@ public:
             WriteTab();
         }
 
+        // CTRL+BACKSPACE deletes the whole word
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) &&
+            Keyboard.backspace)
+        {
+            HandleBackspace();
+            int cursor = codeTabs[currentTab].CursorPos;
+            while (cursor >= 0 && codeTabs[currentTab].text[cursor] != ' ' && codeTabs[currentTab].text[cursor] != '\n')
+            {
+                HandleBackspace();
+                cursor--;
+            }
+        }
+        else
+        {
+            if (Keyboard.backspace)
+            {
+                HandleBackspace();
+            }
+        }
+
+        if (Keyboard.delete_pressed)
+        {
+            HandleDelete();
+        }
+
         if (Mouse.scroll)
         {
             codeTabs[currentTab].offset.y += Mouse.scroll * SCROLL_SENSITIVITY;
@@ -702,18 +789,7 @@ public:
             }
         }
 
-        if (Keyboard.backspace)
-        {
-            HandleBackspace();
-        }
-
-        if (Keyboard.delete_pressed)
-        {
-            HandleDelete();
-        }
-
         int lineCount = CalcCurrentLineCount();
-
         LineNumbersSection.setLineCount(lineCount);
 
         CodeSection.text = codeTabs[currentTab].text;

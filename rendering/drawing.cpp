@@ -29,6 +29,26 @@ void DrawRect(Vector2 pos, Vector2 size, bool filled)
 
 std::unordered_map<std::string, TTF_Font *> cachedFonts;
 
+TTF_Font *GetFont(int textSize)
+{
+    std::string fontKey = FONT + "_" + std::to_string(textSize);
+
+    auto it = cachedFonts.find(fontKey);
+    if (it != cachedFonts.end())
+    {
+        return it->second;
+    }
+
+    TTF_Font *font = TTF_OpenFont(FONT.c_str(), textSize);
+    if (!font)
+    {
+        return nullptr;
+    }
+
+    cachedFonts[fontKey] = font;
+    return font;
+}
+
 namespace
 {
     struct LineKey
@@ -79,26 +99,6 @@ namespace
     std::unordered_map<LineKey, CachedLine, LineKeyHash> cachedLines;
     size_t cachedLineBytes = 0;
     uint64_t textUseClock = 0;
-
-    TTF_Font *GetFont(int textSize)
-    {
-        std::string fontKey = FONT + "_" + std::to_string(textSize);
-
-        auto it = cachedFonts.find(fontKey);
-        if (it != cachedFonts.end())
-        {
-            return it->second;
-        }
-
-        TTF_Font *font = TTF_OpenFont(FONT.c_str(), textSize);
-        if (!font)
-        {
-            return nullptr;
-        }
-
-        cachedFonts[fontKey] = font;
-        return font;
-    }
 
     void EvictLines()
     {

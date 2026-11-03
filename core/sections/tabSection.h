@@ -27,7 +27,7 @@ class tabSection : public Section
 
 public:
     Vector2 pos = {0, 0};
-    Vector2 size = {2000, 30};
+    Vector2 size = {(float)ScreenWidth, 30};
     int textSize = 16;
     float tabSize = 120;
     float tabSpacing = 5;

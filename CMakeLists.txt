@@ -16,6 +16,7 @@ find_package(SDL3_ttf CONFIG REQUIRED)
 
 add_executable(Myra
     core/main.cpp
+    core/screen.cpp
     core/keyboard.cpp
     core/mouse.cpp
     rendering/drawing.cpp

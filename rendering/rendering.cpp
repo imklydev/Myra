@@ -1,5 +1,9 @@
 #include "rendering.h"
 
+// Some usefull stuff
+int ScreenWidth = 800;
+int ScreenHeight = 800;
+
 // Rendering related stuff
 SDL_Window *window;
 SDL_Renderer *renderer;
