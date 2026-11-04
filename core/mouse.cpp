@@ -9,6 +9,8 @@ void BeginMouseFrame()
     Mouse.leftClicked = false;
     Mouse.rightClicked = false;
     Mouse.scroll = 0;
+
+    SDL_GetMouseState(&Mouse.position.x, &Mouse.position.y);
 }
 
 void HandleMouse(SDL_Event *event)

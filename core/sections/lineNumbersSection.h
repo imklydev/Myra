@@ -47,4 +47,4 @@ public:
     }
 };
 
-lineNumbersSection LineNumbersSection;
+inline lineNumbersSection LineNumbersSection;

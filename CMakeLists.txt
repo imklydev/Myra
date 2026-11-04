@@ -19,6 +19,7 @@ add_executable(Myra
     core/screen.cpp
     core/keyboard.cpp
     core/mouse.cpp
+    core/screens/codeEditorScreen.cpp
     rendering/drawing.cpp
     rendering/rendering.cpp
     third_party/tinyfiledialogs.cpp

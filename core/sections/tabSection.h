@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "../section.h"
+#include "../screens/codeEditorScreen.h"
 
 struct textSnapshot
 {
@@ -36,21 +37,33 @@ struct codeTab
     }
 };
 
+inline void showFolder()
+{
+    ToggleShowProjectFolderOverview();
+}
+
 class tabSection : public Section
 {
 
 public:
     Vector2 pos = {0, 0};
-    Vector2 size = {(float)ScreenWidth, 30};
+    Vector2 size = {(float)4000, 30};
     int textSize = 16;
     float tabSize = 120;
     float tabSpacing = 5;
     std::vector<codeTab> *codeTabs;
+    Button showFolderButton = {{0, 0}, {50, size.y}, showFolder};
 
     void draw(Vector2 pos_offset, int selectedTab = 0)
     {
         SetDrawColor(TABS_SECTION_BG_COLOR);
         DrawRect(pos, size); // Background (tabs are drawn on top of this)
+
+        SetDrawColor(TABS_SECTION_TAB_COLOR);
+
+        // Draw image
+        showFolderButton.draw();
+        DrawImage(showFolderButton.pos + Vector2(25 / 2, 0), {25, 25}, FOLDER_ICON_PATH.c_str());
 
         for (int i = 0; i < codeTabs->size(); i++)
         {
@@ -63,22 +76,22 @@ public:
                 SetDrawColor(TABS_SECTION_TAB_COLOR);
             }
 
-            DrawRect(pos + Vector2{tabSize * i + tabSpacing * i, 0}, {tabSize, size.y});
+            DrawRect(pos + Vector2{tabSize * i + tabSpacing * i + (showFolderButton.size.x), 0}, {tabSize, size.y});
 
             if ((*codeTabs)[i].openedFile.empty())
             {
                 SetDrawColor(TEXT_COLOR);
-                DrawText("Untitled", textSize, pos + Vector2{tabSize * i + tabSpacing * i + 5.0f, 0.0f}, {tabSize, size.y});
+                DrawText("Untitled", textSize, pos + Vector2{tabSize * i + tabSpacing * i + 5.0f + (showFolderButton.size.x), 0.0f}, {tabSize, size.y});
             }
             else
             {
                 SetDrawColor(TEXT_COLOR);
                 std::string path = (*codeTabs)[i].openedFile;
                 std::string title = path.substr(path.find_last_of("/\\") + 1);
-                DrawText(title, textSize, pos + Vector2{tabSize * i + tabSpacing * i + 0.0f, 0.0f}, {tabSize, size.y});
+                DrawText(title, textSize, pos + Vector2{tabSize * i + tabSpacing * i + (showFolderButton.size.x), 0.0f}, {tabSize, size.y});
             }
         }
     }
 };
 
-tabSection TabSecton;
+inline tabSection TabSecton;

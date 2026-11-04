@@ -1,6 +1,7 @@
 #include "rendering.h"
 
 #include <cstdint>
+#include <iostream>
 #include <unordered_set>
 #include <utility>
 
@@ -23,6 +24,98 @@ void DrawRect(Vector2 pos, Vector2 size, bool filled)
     {
         SDL_RenderRect(renderer, &rect);
     }
+}
+
+// Images
+#include <SDL3_image/SDL_image.h> // add near the top, with the other includes
+#include <string>
+#include <unordered_map>
+
+// Images
+namespace
+{
+    struct CachedImage
+    {
+        SDL_Texture *texture = nullptr;
+        float width = 0;
+        float height = 0;
+    };
+
+    std::unordered_map<std::string, CachedImage> cachedImages;
+
+    const CachedImage *GetImage(const char *path)
+    {
+        auto it = cachedImages.find(path);
+        if (it != cachedImages.end())
+        {
+            return it->second.texture ? &it->second : nullptr;
+        }
+
+        CachedImage image;
+        image.texture = IMG_LoadTexture(renderer, path);
+        SDL_SetTextureScaleMode(image.texture, SDL_SCALEMODE_NEAREST);
+        // i'm ashamed of this line of code lmao. i needed this for ONE texture and was too lazy to implement a better option
+
+        if (image.texture)
+        {
+            SDL_GetTextureSize(image.texture, &image.width, &image.height);
+        }
+
+        // Cache failures too (texture == nullptr) so a missing file
+        // doesn't hit the disk every frame.
+        auto inserted = cachedImages.emplace(path, image);
+        return image.texture ? &inserted.first->second : nullptr;
+    }
+}
+
+void DrawImage(Vector2 pos, Vector2 size, const char *path)
+{
+    if (!path)
+    {
+        return;
+    }
+
+    const CachedImage *image = GetImage(path);
+    if (!image)
+    {
+        return;
+    }
+
+    // Negative size means "use the image's native size"
+    float w = size.x >= 0 ? size.x : image->width;
+    float h = size.y >= 0 ? size.y : image->height;
+
+    SDL_FRect rect = {pos.x, pos.y, w, h};
+    SDL_RenderTexture(renderer, image->texture, nullptr, &rect);
+}
+
+void FreeImage(const char *path)
+{
+    auto it = cachedImages.find(path);
+    if (it == cachedImages.end())
+    {
+        return;
+    }
+
+    if (it->second.texture)
+    {
+        SDL_DestroyTexture(it->second.texture);
+    }
+
+    cachedImages.erase(it);
+}
+
+void FreeAllImages()
+{
+    for (auto &entry : cachedImages)
+    {
+        if (entry.second.texture)
+        {
+            SDL_DestroyTexture(entry.second.texture);
+        }
+    }
+
+    cachedImages.clear();
 }
 
 // Text

@@ -7,9 +7,12 @@
 #include "../screen.h"
 #include "../keyboard.h"
 
+extern void ToggleShowProjectFolderOverview();
+
 #include "../sections/lineNumbersSection.h"
 #include "../sections/codeSection.h"
 #include "../sections/tabSection.h"
+#include "../sections/projectFolderOverview.h"
 
 #include "../../third_party/tinyfiledialogs.h"
 
@@ -265,7 +268,7 @@ private:
 
         int line = std::count(codeTabs[currentTab].text.begin(), codeTabs[currentTab].text.begin() + lineStart, '\n');
 
-        DrawRect(Vector2(w + CodeSection.pos.x, line * lineHeight) + Vector2(0, TabSecton.size.y) + codeTabs[currentTab].offset, Vector2(2, h));
+        DrawRect(Vector2(w + CodeSection.pos.x, line * lineHeight) + Vector2(0, TabSecton.size.y) + codeTabs[currentTab].offset + offsetCausedByProjectFolderOverview, Vector2(2, h));
     }
 
     void DrawSelection()
@@ -327,10 +330,10 @@ private:
                 const int selW = measure(sel);
 
                 SetDrawColor(SELECTION_BG_COLOR);
-                DrawRect(Vector2(x, y) + Vector2(0, TabSecton.size.y), Vector2(selW, lineHeight));
+                DrawRect(Vector2(x, y) + Vector2(0, TabSecton.size.y) + offsetCausedByProjectFolderOverview, Vector2(selW, lineHeight));
 
                 SetDrawColor({0, 0, 0, 255});
-                DrawText(sel, 16, Vector2(x, y) + Vector2(0, TabSecton.size.y));
+                DrawText(sel, 16, Vector2(x, y) + Vector2(0, TabSecton.size.y) + offsetCausedByProjectFolderOverview);
                 SetDrawColor(TEXT_COLOR);
             }
 
@@ -343,7 +346,7 @@ private:
             {
                 const float x = CodeSection.pos.x + measure(text.substr(lineStart, lineEnd - lineStart));
                 SetDrawColor(SELECTION_BG_COLOR);
-                DrawRect(Vector2(x, y) + Vector2(0, TabSecton.size.y), Vector2(6, lineHeight));
+                DrawRect(Vector2(x, y) + Vector2(0, TabSecton.size.y) + offsetCausedByProjectFolderOverview, Vector2(6, lineHeight));
                 SetDrawColor(TEXT_COLOR);
             }
 
@@ -609,6 +612,8 @@ private:
     }
 
 public:
+    bool shouldShowProjectFolderOverview = false;
+
     void OpenTab(char *file)
     {
         if (codeTabs[0] == defaultTab)
@@ -826,10 +831,21 @@ public:
         CodeSection.text = codeTabs[currentTab].text;
     }
 
+    Vector2 offsetCausedByProjectFolderOverview = {0, 0};
     void draw() override
     {
-        LineNumbersSection.draw(codeTabs[currentTab].offset + Vector2(0, TabSecton.size.y));
-        CodeSection.draw(codeTabs[currentTab].offset + Vector2(0, TabSecton.size.y));
+        if (shouldShowProjectFolderOverview)
+        {
+            ProjectFolderOverview.draw({0, 0});
+            offsetCausedByProjectFolderOverview = Vector2(ProjectFolderOverview.size.x, 0);
+        }
+        else
+        {
+            offsetCausedByProjectFolderOverview = {0, 0};
+        }
+
+        LineNumbersSection.draw(codeTabs[currentTab].offset + Vector2(0, TabSecton.size.y) + offsetCausedByProjectFolderOverview);
+        CodeSection.draw(codeTabs[currentTab].offset + Vector2(0, TabSecton.size.y) + offsetCausedByProjectFolderOverview);
 
         if (codeTabs[currentTab].selectionMode && codeTabs[currentTab].selectionLength > 0)
         {
@@ -841,4 +857,4 @@ public:
     }
 };
 
-codeEditorScreen CodeEditorScreen;
+inline codeEditorScreen CodeEditorScreen;

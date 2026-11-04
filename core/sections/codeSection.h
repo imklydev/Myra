@@ -21,4 +21,4 @@ public:
     }
 };
 
-codeSection CodeSection;
+inline codeSection CodeSection;

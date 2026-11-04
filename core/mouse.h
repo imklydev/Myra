@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+#include "../rendering/misc.h"
 
 #include <string>
 
@@ -8,6 +9,7 @@ struct MouseState
 {
     bool leftClicked = false;
     bool rightClicked = false;
+    Vector2 position;
     float scroll = 0;
 };
 

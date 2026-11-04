@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../rendering/rendering.h"
+#include "../ui/button.h"
 
 // The base Section class.
 class Section {

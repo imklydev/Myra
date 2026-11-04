@@ -15,6 +15,13 @@ void SetDrawColor(Color color);
 // Shapes
 void DrawRect(Vector2 pos, Vector2 size, bool filled = true);
 
+// Images
+void DrawImage(Vector2 pos, Vector2 size, const char *path);
+
+void FreeImage(const char *path);
+
+void FreeAllImages();
+
 // Text
 extern std::unordered_map<std::string, TTF_Font *> cachedFonts;
 extern TTF_Font *GetFont(int textSize);

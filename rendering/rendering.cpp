@@ -50,6 +50,7 @@ void QuitRenderingBackend()
 {
     FreeAllText();
     FreeAllFonts();
+    FreeAllImages();
 
     SDL_DestroyRenderer(renderer);
 
