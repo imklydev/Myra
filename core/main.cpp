@@ -5,7 +5,7 @@
 #include "screens/codeEditorScreen.h"
 #include "screens/myraScreen.h"
 
-int main()
+int main(int argc, char *argv[])
 {
     InitRenderingBackend();
 
@@ -14,6 +14,17 @@ int main()
 
     SDL_Event event;
     bool running = true;
+
+    if (argc > 1)
+    {
+        SetCurrentScreen(&CodeEditorScreen);
+        ActuallySetCurrentScreen();
+
+        for (int i = 1; i < argc; i++)
+        {
+            CodeEditorScreen.OpenTab(argv[i]);
+        }
+    }
 
     while (running)
     {

@@ -2,4 +2,4 @@
 
 #include <string>
 
-inline std::string FONT = "assets/fonts/JetBrainsMono.ttf";
+inline std::string FONT = (std::string(SDL_GetBasePath()) + "assets/fonts/JetBrainsMono.ttf");

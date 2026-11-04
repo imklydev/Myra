@@ -20,6 +20,20 @@ struct codeTab
     int selectionLength;
     bool selectionMode = false;
     Vector2 offset = {0, 0};
+
+    // this was pretty unnecesary but i needed it for one if statement lol
+    bool operator==(const codeTab &other) const
+    {
+        return undoHistoryIndex == other.undoHistoryIndex &&
+               text == other.text &&
+               openedFile == other.openedFile &&
+               CursorPos == other.CursorPos &&
+               SelectionStartPos == other.SelectionStartPos &&
+               selectionLength == other.selectionLength &&
+               selectionMode == other.selectionMode &&
+               offset.x == other.offset.x &&
+               offset.y == other.offset.y;
+    }
 };
 
 class tabSection : public Section

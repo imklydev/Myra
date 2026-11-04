@@ -609,6 +609,37 @@ private:
     }
 
 public:
+    void OpenTab(char *file)
+    {
+        if (codeTabs[0] == defaultTab)
+        {
+            codeTabs.erase(codeTabs.begin() + 0);
+        }
+
+        if (file == nullptr)
+        {
+            return;
+        }
+
+        codeTabs.push_back({{{"", -1}}, 0, "", file, -1, -1, 0, false, Vector2(0, 0)});
+        currentTab = codeTabs.size() - 1;
+
+        if (!codeTabs[currentTab].openedFile.empty())
+        {
+            std::ifstream file(codeTabs[currentTab].openedFile);
+
+            std::string line;
+            codeTabs[currentTab].text = "";
+            while (std::getline(file, line))
+            {
+                codeTabs[currentTab].text += line;
+                codeTabs[currentTab].text += "\n";
+            }
+
+            file.close();
+        }
+    }
+
     void update() override
     {
         TabSecton.codeTabs = &codeTabs;

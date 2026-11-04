@@ -1,3 +1,4 @@
+#include <iostream>
 #include "rendering.h"
 
 // Some usefull stuff
@@ -31,8 +32,18 @@ void CreateSDLWindow(const char *title, int width, int height)
 
 void InitRenderingBackend()
 {
-    SDL_Init(SDL_INIT_VIDEO);
-    TTF_Init();
+    if (!SDL_Init(SDL_INIT_VIDEO))
+    {
+        std::cout << "SDL3 (the rendering backend) couldn't start.";
+        exit(0);
+    }
+
+    if (!TTF_Init())
+    {
+        std::cout << "SDL3_TTF (used for fonts) couldn't start.";
+        exit(0);
+    }
+    
 }
 
 void QuitRenderingBackend()
