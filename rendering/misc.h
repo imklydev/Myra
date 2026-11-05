@@ -21,6 +21,20 @@ struct Vector2
     {
         return {x - other.x, y - other.y};
     }
+
+    Vector2 &operator+=(const Vector2 &other)
+    {
+        x += other.x;
+        y += other.y;
+        return *this;
+    }
+
+    Vector2 &operator-=(const Vector2 &other)
+    {
+        x -= other.x;
+        y -= other.y;
+        return *this;
+    }
 };
 
 struct Vector2i
@@ -40,5 +54,19 @@ struct Vector2i
     Vector2i operator-(const Vector2i &other) const
     {
         return {x - other.x, y - other.y};
+    }
+
+    Vector2i &operator+=(const Vector2i &other)
+    {
+        x += other.x;
+        y += other.y;
+        return *this;
+    }
+
+    Vector2i &operator-=(const Vector2i &other)
+    {
+        x -= other.x;
+        y -= other.y;
+        return *this;
     }
 };

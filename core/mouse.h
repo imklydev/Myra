@@ -18,3 +18,5 @@ extern MouseState Mouse;
 void BeginMouseFrame();
 
 void HandleMouse(SDL_Event *event);
+
+bool isMouseHoveringOver(Vector2 pos, Vector2 size);

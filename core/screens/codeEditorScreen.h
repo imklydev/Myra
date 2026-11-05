@@ -8,6 +8,8 @@
 #include "../keyboard.h"
 
 extern void ToggleShowProjectFolderOverview();
+extern void OpenTab(char *file);
+extern std::string GetOpenedFolder();
 
 #include "../sections/lineNumbersSection.h"
 #include "../sections/codeSection.h"
@@ -341,7 +343,7 @@ private:
             if (lineEnd >= selEnd)
                 break;
 
-            // Optional: small highlight so selected newlines (and empty lines) are visible.
+            // small highlight so selected newlines (and empty lines) are visible.
             if (selBegin <= lineEnd)
             {
                 const float x = CodeSection.pos.x + measure(text.substr(lineStart, lineEnd - lineStart));
@@ -613,6 +615,7 @@ private:
 
 public:
     bool shouldShowProjectFolderOverview = false;
+    std::string openedFolder = "";
 
     void OpenTab(char *file)
     {
@@ -643,6 +646,20 @@ public:
 
             file.close();
         }
+    }
+
+    void OpenFolder()
+    {
+        char *path = tinyfd_selectFolderDialog(
+            "Open folder...",
+            "../");
+
+        if (path == nullptr)
+        {
+            return;
+        }
+
+        openedFolder = path;
     }
 
     void update() override
@@ -676,10 +693,20 @@ public:
             }
         }
 
-        // CTRL+O open file
-        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_O)
+        // CTRL+SHIFT+O open folder
+        if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) &&
+            (IsKeyPressed[SDL_SCANCODE_LSHIFT] || IsKeyPressed[SDL_SCANCODE_RSHIFT]) &&
+            Keyboard.key == SDLK_O)
         {
-            OpenFile();
+            OpenFolder();
+        }
+        else // to make sure these 2 don't run at the same time
+        {
+            // CTRL+O open file
+            if ((IsKeyPressed[SDL_SCANCODE_LCTRL] || IsKeyPressed[SDL_SCANCODE_RCTRL]) && Keyboard.key == SDLK_O)
+            {
+                OpenFile();
+            }
         }
 
         // CTRL+S save file
@@ -815,13 +842,16 @@ public:
             HandleDelete();
         }
 
-        if (Mouse.scroll)
+        if (isMouseHoveringOver(CodeSection.pos + codeTabs[currentTab].offset + Vector2(0, TabSecton.size.y) + offsetCausedByProjectFolderOverview, CodeSection.size))
         {
-            codeTabs[currentTab].offset.y += Mouse.scroll * SCROLL_SENSITIVITY;
-
-            if (codeTabs[currentTab].offset.y > 0)
+            if (Mouse.scroll)
             {
-                codeTabs[currentTab].offset.y = 0;
+                codeTabs[currentTab].offset.y += Mouse.scroll * SCROLL_SENSITIVITY;
+
+                if (codeTabs[currentTab].offset.y > 0)
+                {
+                    codeTabs[currentTab].offset.y = 0;
+                }
             }
         }
 

@@ -3,7 +3,12 @@
 
 class Button
 {
-private:
+
+public:
+    Vector2 pos;
+    Vector2 size;
+    void (*onClick)(void);
+
     void update()
     {
         if (Mouse.leftClicked)
@@ -17,11 +22,6 @@ private:
             }
         }
     }
-
-public:
-    Vector2 pos;
-    Vector2 size;
-    void (*onClick)(void);
 
     void draw()
     {

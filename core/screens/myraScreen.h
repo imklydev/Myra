@@ -39,7 +39,7 @@ public:
 
         DrawText("Thank you for trying the Myra code editor!\nYou can press any key to exit this menu.", 16, Vector2(ScreenWidth / 2 - 200, 300));
 
-        DrawText("Some usefull keybinds, while you're here:\nCTRL+N - New tab\nCTRL+Q - Close tab\nCTRL+ALT+LEFT - Move to previous tab\nCTRL+ALT+RIGHT - Move to next tab", 16, Vector2(ScreenWidth / 2 - 200, 500));
+        DrawText("Some usefull keybinds, while you're here:\nCTRL+N - New tab\nCTRL+Q - Close tab\nCTRL+ALT+LEFT - Move to previous tab\nCTRL+ALT+RIGHT - Move to next tab\nCTRL+O - Open file\nCTRL+SHIFT+O - Open folder", 16, Vector2(ScreenWidth / 2 - 200, 500));
     }
 };
 
