@@ -10,6 +10,7 @@
 extern void ToggleShowProjectFolderOverview();
 extern void OpenTab(char *file);
 extern std::string GetOpenedFolder();
+void SetCurrentTab(int tab);
 
 #include "../sections/lineNumbersSection.h"
 #include "../sections/codeSection.h"
@@ -21,7 +22,10 @@ extern std::string GetOpenedFolder();
 class codeEditorScreen : public Screen
 {
 private:
+    bool isCursorAllowedToMove = true;
+
     int currentTab = 0;
+
     codeTab defaultTab = {{{"", -1}}, 0, "", "", -1, -1, 0, false, Vector2(0, 0)};
     std::vector<codeTab> codeTabs = {defaultTab};
 
@@ -471,8 +475,7 @@ private:
         if (codeTabs.size() > currentTab + 1)
         {
             currentTab = currentTab + 1;
-            MoveCursorLeft(); // Somehow even crappier fixto not make the cursor move when moving tabs
-                              //, but fixes the screen jittering
+            isCursorAllowedToMove = false; // to prevent also moving the cursor right
         }
     }
 
@@ -481,8 +484,7 @@ private:
         if (currentTab > 0)
         {
             currentTab--;
-            MoveCursorRight(); // Somehow even crappier fixto not make the cursor move when moving tabs
-                               //, but fixes the screen jittering
+            isCursorAllowedToMove = false; // to prevent also moving the cursor left
         }
     }
 
@@ -617,6 +619,11 @@ public:
     bool shouldShowProjectFolderOverview = false;
     std::string openedFolder = "";
 
+    void SetCurrentTab(int tab)
+    {
+        currentTab = tab;
+    }
+
     void OpenTab(char *file)
     {
         if (codeTabs[0] == defaultTab)
@@ -664,6 +671,7 @@ public:
 
     void update() override
     {
+        isCursorAllowedToMove = true;
         TabSecton.codeTabs = &codeTabs;
 
         if (!Keyboard.text.empty())
@@ -788,22 +796,25 @@ public:
         // SHIFT select text
         HandleSelectingText();
 
-        // Cursor movement
-        if (Keyboard.move == "left")
+        if (isCursorAllowedToMove)
         {
-            MoveCursorLeft();
-        }
-        else if (Keyboard.move == "right")
-        {
-            MoveCursorRight();
-        }
-        else if (Keyboard.move == "up")
-        {
-            MoveCursorUp();
-        }
-        else if (Keyboard.move == "down")
-        {
-            MoveCursorDown();
+            // Cursor movement
+            if (Keyboard.move == "left")
+            {
+                MoveCursorLeft();
+            }
+            else if (Keyboard.move == "right")
+            {
+                MoveCursorRight();
+            }
+            else if (Keyboard.move == "up")
+            {
+                MoveCursorUp();
+            }
+            else if (Keyboard.move == "down")
+            {
+                MoveCursorDown();
+            }
         }
 
         if (Keyboard.enter)

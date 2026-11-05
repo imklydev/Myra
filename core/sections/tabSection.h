@@ -49,7 +49,7 @@ public:
     Vector2 pos = {0, 0};
     Vector2 size = {(float)4000, 30};
     int textSize = 16;
-    float tabSize = 120;
+    float tabSize = 200;
     float tabSpacing = 5;
     std::vector<codeTab> *codeTabs;
     Button showFolderButton = {{0, 0}, {50, size.y}, showFolder};
@@ -61,12 +61,17 @@ public:
 
         SetDrawColor(TABS_SECTION_TAB_COLOR);
 
-        // Draw image
-        showFolderButton.draw();
-        DrawImage(showFolderButton.pos + Vector2(25 / 2, 0), {25, 25}, FOLDER_ICON_PATH.c_str());
-
         for (int i = 0; i < codeTabs->size(); i++)
         {
+            if (isMouseHoveringOver(pos + Vector2{tabSize * i + tabSpacing * i + (showFolderButton.size.x), 0}, {tabSize, size.y}))
+            {
+                if (Mouse.leftClicked)
+                {
+                    SetCurrentTab(i);
+                    selectedTab = i;
+                }
+            }
+
             if (i == selectedTab)
             {
                 SetDrawColor(TABS_SECTION_SELECTED_TAB_COLOR);
@@ -74,6 +79,11 @@ public:
             else
             {
                 SetDrawColor(TABS_SECTION_TAB_COLOR);
+
+                if (isMouseHoveringOver(pos + Vector2{tabSize * i + tabSpacing * i + (showFolderButton.size.x), 0}, {tabSize, size.y}))
+                {
+                    SetDrawColor(TABS_SECTION_HOVERED_TAB_COLOR);
+                }
             }
 
             DrawRect(pos + Vector2{tabSize * i + tabSpacing * i + (showFolderButton.size.x), 0}, {tabSize, size.y});
@@ -89,6 +99,21 @@ public:
                 std::string path = (*codeTabs)[i].openedFile;
                 std::string title = path.substr(path.find_last_of("/\\") + 1);
                 DrawText(title, textSize, pos + Vector2{tabSize * i + tabSpacing * i + (showFolderButton.size.x), 0.0f}, {tabSize, size.y});
+            }
+        }
+
+        // Draw folder icon
+        SetDrawColor(TABS_SECTION_TAB_COLOR);
+        showFolderButton.draw();
+        DrawImage(showFolderButton.pos + Vector2(25 / 2, 0), {25, 25}, FOLDER_ICON_PATH.c_str());
+
+        if (isMouseHoveringOver(pos + pos_offset, size))
+        {
+            pos.x += Mouse.scroll * SCROLL_SENSITIVITY;
+
+            if (pos.x > 0)
+            {
+                pos.x = 0;
             }
         }
     }

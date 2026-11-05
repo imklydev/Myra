@@ -13,3 +13,8 @@ void OpenTab(char *file)
 {
     CodeEditorScreen.OpenTab(file);
 }
+
+void SetCurrentTab(int tab)
+{
+    CodeEditorScreen.SetCurrentTab(tab);
+}
