@@ -3,7 +3,6 @@
 #include "../section.h"
 
 inline std::unordered_map<std::string, SDL_Color> C_style_coloring_keywords = {
-
     // variable types
     {"int", SDL_Color{65, 65, 120, 255}},
     {"string", SDL_Color{45, 100, 45, 255}},
@@ -12,12 +11,27 @@ inline std::unordered_map<std::string, SDL_Color> C_style_coloring_keywords = {
     {"long", SDL_Color{0, 102, 153, 255}},
     {"float", SDL_Color{204, 153, 0, 255}},
 
+    // declaration keywords
+    {"struct", SDL_Color{169, 65, 217, 255}},
+    {"class", SDL_Color{217, 214, 109, 255}},
+    {"namespace", SDL_Color{65, 217, 182, 255}},
+
     // operators
     {"=", SDL_Color{235, 235, 195, 255}},
     {"+", SDL_Color{235, 235, 195, 255}},
     {"-", SDL_Color{235, 235, 195, 255}},
     {"/", SDL_Color{235, 235, 195, 255}},
     {"*", SDL_Color{235, 235, 195, 255}},
+
+    // statement keywords
+    {"if", SDL_Color{184, 44, 209, 255}},
+    {"while", SDL_Color{184, 44, 209, 255}},
+    {"for", SDL_Color{184, 44, 209, 255}},
+    {"do", SDL_Color{184, 44, 209, 255}},
+
+    // including keywords (these namaes keep getting dumber and dumber lol)
+    {"#include", SDL_Color{103, 28, 188, 255}},
+    {"using", SDL_Color{211, 172, 30, 255}},
 };
 
 class codeSection : public Section
@@ -42,6 +56,20 @@ private:
                 }
 
                 textSpans.push_back({start, i + 1, SDL_Color{255, 204, 102, 255}});
+                continue;
+            }
+
+            // for comment coloring
+            if (i + 1 < text.size() && text[i] == '/' && text[i + 1] == '/')
+            {
+                size_t start = i;
+
+                while (i < text.size() && text[i] != '\n')
+                {
+                    i++;
+                }
+
+                textSpans.push_back({start, i + 1, SDL_Color{62, 134, 78, 255}});
                 continue;
             }
 
