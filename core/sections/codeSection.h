@@ -10,6 +10,9 @@ inline std::unordered_map<std::string, SDL_Color> C_style_coloring_keywords = {
     {"unsigned", SDL_Color{75, 75, 165, 255}},
     {"long", SDL_Color{0, 102, 153, 255}},
     {"float", SDL_Color{204, 153, 0, 255}},
+    {"bool", SDL_Color{132, 52, 181, 255}},
+    {"const", SDL_Color{142, 136, 28, 255}},
+    {"void", SDL_Color{132, 52, 181, 255}},
 
     // declaration keywords
     {"struct", SDL_Color{169, 65, 217, 255}},
@@ -25,6 +28,9 @@ inline std::unordered_map<std::string, SDL_Color> C_style_coloring_keywords = {
 
     // statement keywords
     {"if", SDL_Color{184, 44, 209, 255}},
+    {"switch", SDL_Color{184, 44, 209, 255}},
+    {"case", SDL_Color{184, 44, 209, 255}},
+    {"else", SDL_Color{184, 44, 209, 255}},
     {"while", SDL_Color{184, 44, 209, 255}},
     {"for", SDL_Color{184, 44, 209, 255}},
     {"do", SDL_Color{184, 44, 209, 255}},
@@ -32,6 +38,10 @@ inline std::unordered_map<std::string, SDL_Color> C_style_coloring_keywords = {
     // including keywords (these namaes keep getting dumber and dumber lol)
     {"#include", SDL_Color{103, 28, 188, 255}},
     {"using", SDL_Color{211, 172, 30, 255}},
+
+    // boolean values
+    {"true", SDL_Color{27, 188, 102, 255}},
+    {"false", SDL_Color{174, 39, 39, 255}},
 };
 
 class codeSection : public Section
