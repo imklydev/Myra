@@ -687,17 +687,39 @@ public:
                 SaveTextSnapshot();
             }
 
-            codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, Keyboard.text);
-            codeTabs[currentTab].CursorPos += Keyboard.text.size();
+            // if you just wrote (, and the simple autocompletion below wrote ), writing
+            // ) again will just move the cursor right, bc you probably didn't want that
+            // and just didn't realize the autocompletion allready wrote it.
+            // this applies to all the other chars this checks for.
 
-            // Some standard simple autocompletion quality of life features
-            if (Keyboard.text == "{")
+            if (((Keyboard.text == ")" && codeTabs[currentTab].text[codeTabs[currentTab].CursorPos + 1] == ')') ||
+                 (Keyboard.text == "\"" && codeTabs[currentTab].text[codeTabs[currentTab].CursorPos + 1] == '"') ||
+                 (Keyboard.text == "'" && codeTabs[currentTab].text[codeTabs[currentTab].CursorPos + 1] == '\'')))
             {
-                codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, "}");
+                MoveCursorRight();
             }
-            else if (Keyboard.text == "(")
+            else
             {
-                codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, ")");
+                codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, Keyboard.text);
+                codeTabs[currentTab].CursorPos += Keyboard.text.size();
+
+                // Some standard simple autocompletion quality of life features
+                if (Keyboard.text == "{")
+                {
+                    codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, "}");
+                }
+                else if (Keyboard.text == "(")
+                {
+                    codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, ")");
+                }
+                else if (Keyboard.text == "\"")
+                {
+                    codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, "\"");
+                }
+                else if (Keyboard.text == "'")
+                {
+                    codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, "'");
+                }
             }
         }
 
