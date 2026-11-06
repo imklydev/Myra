@@ -869,7 +869,11 @@ public:
         int lineCount = CalcCurrentLineCount();
         LineNumbersSection.setLineCount(lineCount);
 
-        CodeSection.text = codeTabs[currentTab].text;
+        if (CodeSection.text != codeTabs[currentTab].text)
+        {
+            CodeSection.text = codeTabs[currentTab].text;
+            CodeSection.RecalculateTextSpans();
+        }
     }
 
     Vector2 offsetCausedByProjectFolderOverview = {0, 0};

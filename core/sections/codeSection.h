@@ -2,6 +2,23 @@
 
 #include "../section.h"
 
+inline std::unordered_map<std::string, SDL_Color> C_style_coloring_keywords = {
+
+    // variable types
+    {"int", SDL_Color{65, 65, 120, 255}},
+    {"string", SDL_Color{45, 100, 45, 255}},
+    {"char", SDL_Color{204, 153, 255, 255}},
+    {"unsigned", SDL_Color{75, 75, 165, 255}},
+    {"long", SDL_Color{0, 102, 153, 255}},
+
+    // operators
+    {"=", SDL_Color{235, 235, 195, 255}},
+    {"+", SDL_Color{235, 235, 195, 255}},
+    {"-", SDL_Color{235, 235, 195, 255}},
+    {"/", SDL_Color{235, 235, 195, 255}},
+    {"*", SDL_Color{235, 235, 195, 255}},
+};
+
 class codeSection : public Section
 {
 private:
@@ -10,24 +27,48 @@ private:
         std::vector<TextSpan> textSpans;
         for (size_t i = 0; i < text.size(); i++)
         {
-            char c = text[i];
 
-            // if a character is a number, make it green (just a test to see if text coloring works)
-            if (c >= '0' && c <= '9')
+            // for string coloring
+            if (text[i] == '"' || text[i] == '\'' || text[i] == '`')
+            {
+                char end_char = text[i];
+                size_t start = i;
+                i++;
+
+                while (i < text.size() && text[i] != end_char)
+                {
+                    i++;
+                }
+
+                textSpans.push_back({start, i + 1, SDL_Color{255, 204, 102, 255}});
+                continue;
+            }
+
+            // for number coloring
+            if (text[i] >= '0' && text[i] <= '9')
             {
                 TextSpan span;
                 size_t start = i;
 
-                while (c >= '0' && c <= '9')
+                while (text[i] >= '0' && text[i] <= '9')
                 {
                     i++;
-                    c = text[i];
                 }
 
                 span.start = start;
                 span.end = i;
                 span.color = LIGHT_GREEN;
                 textSpans.push_back(span);
+                continue;
+            }
+
+            for (auto keyword : C_style_coloring_keywords)
+            {
+                if (text.substr(i, keyword.first.size()) == keyword.first)
+                {
+                    textSpans.push_back({i, i + keyword.first.size(), keyword.second});
+                    i += keyword.first.size();
+                }
             }
         }
 
@@ -39,6 +80,12 @@ public:
     Vector2 size = {4000, 40000};
     float textSize = 16;
     std::string text = "";
+    std::vector<TextSpan> TextSpans = {};
+
+    void RecalculateTextSpans()
+    {
+        TextSpans = GetTextColoringSpans();
+    }
 
     void draw(Vector2 pos_offset) override
     {
@@ -46,7 +93,7 @@ public:
         DrawRect(pos + pos_offset, size);
 
         SetDrawColor(TEXT_COLOR);
-        DrawText(text, textSize, pos + pos_offset, size, GetTextColoringSpans());
+        DrawText(text, textSize, pos + pos_offset, size, TextSpans);
     }
 };
 
