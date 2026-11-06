@@ -1,9 +1,5 @@
 #include "rendering.h"
 
-#include <cstdint>
-#include <iostream>
-#include <unordered_set>
-#include <utility>
 
 // Color
 void SetDrawColor(Color color)
@@ -27,11 +23,7 @@ void DrawRect(Vector2 pos, Vector2 size, bool filled)
 }
 
 // Images
-#include <SDL3_image/SDL_image.h> // add near the top, with the other includes
-#include <string>
-#include <unordered_map>
 
-// Images
 namespace
 {
     struct CachedImage
@@ -262,41 +254,58 @@ namespace
         return texture;
     }
 
-    void SplitLines(
-        const std::string &text, std::unordered_set<std::string> &lines)
+    // Splits one line into (begin, end, color) segments, using spans for colored
+    // parts and `def` for the gaps. `spanIdx` is a cursor that persists between
+    // lines, so total work is O(lines + spans) rather than O(lines * spans).
+    // Both DrawText and FreeText use this, so they always produce identical
+    // cache keys.
+    template <typename Emit>
+    void ForEachSegment(
+        const std::string &line, size_t lineOffset,
+        const std::vector<TextSpan> &spans, size_t &spanIdx,
+        SDL_Color def, Emit &&emit)
     {
-        size_t start = 0;
+        const size_t lineEnd = lineOffset + line.size();
 
-        while (start <= text.size())
+        // Skip spans that ended before this line (they can never matter again)
+        while (spanIdx < spans.size() && spans[spanIdx].end <= lineOffset)
         {
-            size_t end = text.find('\n', start);
-            if (end == std::string::npos)
+            ++spanIdx;
+        }
+
+        size_t cursor = 0;
+
+        for (size_t i = spanIdx; i < spans.size() && spans[i].start < lineEnd; ++i)
+        {
+            size_t s = std::max(spans[i].start, lineOffset) - lineOffset;
+            size_t e = std::min(spans[i].end, lineEnd) - lineOffset;
+
+            if (s < cursor)
             {
-                end = text.size();
+                s = cursor; // tolerate accidental overlap
+            }
+            if (s >= e)
+            {
+                continue;
             }
 
-            std::string line = text.substr(start, end - start);
-            if (!line.empty() && line.back() == '\r')
+            if (cursor < s)
             {
-                line.pop_back();
+                emit(cursor, s, def);
             }
+            emit(s, e, spans[i].color);
+            cursor = e;
+        }
 
-            if (!line.empty())
-            {
-                lines.insert(std::move(line));
-            }
-
-            if (end == text.size())
-            {
-                break;
-            }
-
-            start = end + 1;
+        if (cursor < line.size())
+        {
+            emit(cursor, line.size(), def);
         }
     }
 }
 
-void DrawText(const std::string &text, int textSize, Vector2 pos, Vector2 size)
+void DrawText(const std::string &text, int textSize, Vector2 pos, Vector2 size,
+              const std::vector<TextSpan> &spans)
 {
     SDL_Color color;
     SDL_GetRenderDrawColor(
@@ -332,6 +341,7 @@ void DrawText(const std::string &text, int textSize, Vector2 pos, Vector2 size)
 
     float y = pos.y;
     size_t start = 0;
+    size_t spanIdx = 0;
 
     while (start <= text.size())
     {
@@ -349,18 +359,26 @@ void DrawText(const std::string &text, int textSize, Vector2 pos, Vector2 size)
 
         if (!line.empty())
         {
-            LineKey key = {
-                std::move(line), textSize, color.r, color.g, color.b, color.a};
+            float x = pos.x;
 
-            float width = 0;
-            float height = 0;
-            SDL_Texture *texture = GetLineTexture(font, key, width, height);
+            ForEachSegment(
+                line, start, spans, spanIdx, color,
+                [&](size_t a, size_t b, SDL_Color c)
+                {
+                    LineKey key = {
+                        line.substr(a, b - a), textSize, c.r, c.g, c.b, c.a};
 
-            if (texture)
-            {
-                SDL_FRect textRect = {pos.x, y, width, height};
-                SDL_RenderTexture(renderer, texture, nullptr, &textRect);
-            }
+                    float width = 0;
+                    float height = 0;
+                    SDL_Texture *texture = GetLineTexture(font, key, width, height);
+
+                    if (texture)
+                    {
+                        SDL_FRect rect = {x, y, width, height};
+                        SDL_RenderTexture(renderer, texture, nullptr, &rect);
+                        x += width;
+                    }
+                });
         }
 
         if (end == text.size())
@@ -392,16 +410,53 @@ void DrawText(const std::string &text, int textSize, Vector2 pos, Vector2 size)
     EvictLines();
 }
 
-void FreeText(const std::string &text, int textSize)
+void FreeText(const std::string &text, int textSize,
+              const std::vector<TextSpan> &spans)
 {
-    std::unordered_set<std::string> lines;
-    SplitLines(text, lines);
+    // Regenerate the same segments DrawText would have produced and free
+    // matching cache entries (colour is ignored, as before).
+    std::unordered_set<std::string> segments;
+    SDL_Color unused = {0, 0, 0, 0};
+    size_t spanIdx = 0;
+    size_t start = 0;
+
+    while (start <= text.size())
+    {
+        size_t end = text.find('\n', start);
+        if (end == std::string::npos)
+        {
+            end = text.size();
+        }
+
+        std::string line = text.substr(start, end - start);
+        if (!line.empty() && line.back() == '\r')
+        {
+            line.pop_back();
+        }
+
+        if (!line.empty())
+        {
+            ForEachSegment(
+                line, start, spans, spanIdx, unused,
+                [&](size_t a, size_t b, SDL_Color)
+                {
+                    segments.insert(line.substr(a, b - a));
+                });
+        }
+
+        if (end == text.size())
+        {
+            break;
+        }
+
+        start = end + 1;
+    }
 
     for (auto it = cachedLines.begin(); it != cachedLines.end();)
     {
         const LineKey &key = it->first;
 
-        if (key.textSize == textSize && lines.find(key.line) != lines.end())
+        if (key.textSize == textSize && segments.find(key.line) != segments.end())
         {
             cachedLineBytes -= it->second.bytes;
             SDL_DestroyTexture(it->second.texture);

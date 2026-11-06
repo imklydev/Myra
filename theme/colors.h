@@ -13,3 +13,5 @@ inline Color TABS_SECTION_BG_COLOR = {12, 9, 25, 255};
 inline Color TABS_SECTION_TAB_COLOR = {15, 15, 25, 255};
 inline Color TABS_SECTION_SELECTED_TAB_COLOR = {35, 35, 55, 255};
 inline Color TABS_SECTION_HOVERED_TAB_COLOR = {28, 28, 45, 255};
+
+inline SDL_Color LIGHT_GREEN = {85, 150, 85, 255};

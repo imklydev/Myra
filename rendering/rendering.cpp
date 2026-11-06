@@ -43,7 +43,6 @@ void InitRenderingBackend()
         std::cout << "SDL3_TTF (used for fonts) couldn't start.";
         exit(0);
     }
-    
 }
 
 void QuitRenderingBackend()
