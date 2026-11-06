@@ -10,6 +10,7 @@ inline std::unordered_map<std::string, SDL_Color> C_style_coloring_keywords = {
     {"char", SDL_Color{204, 153, 255, 255}},
     {"unsigned", SDL_Color{75, 75, 165, 255}},
     {"long", SDL_Color{0, 102, 153, 255}},
+    {"float", SDL_Color{204, 153, 0, 255}},
 
     // operators
     {"=", SDL_Color{235, 235, 195, 255}},
@@ -64,8 +65,27 @@ private:
 
             for (auto keyword : C_style_coloring_keywords)
             {
+                if (i + keyword.first.size() > text.size())
+                {
+                    continue;
+                }
+
                 if (text.substr(i, keyword.first.size()) == keyword.first)
                 {
+
+                    if (i + keyword.first.size() < text.size())
+                    {
+                        // to prevenet highlighting keywords that are in variable names and such, skip highliting them if
+                        // the next character after the keywords is a letter or underscore
+                        char nextChar = text[i + keyword.first.size()];
+                        if ((nextChar >= 'A' && nextChar <= 'Z') ||
+                            (nextChar >= 'a' && nextChar <= 'z') ||
+                            (nextChar == '_'))
+                        {
+                            continue;
+                        }
+                    }
+
                     textSpans.push_back({i, i + keyword.first.size(), keyword.second});
                     i += keyword.first.size();
                 }
