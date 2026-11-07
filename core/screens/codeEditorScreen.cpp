@@ -9,6 +9,11 @@ std::string GetOpenedFolder()
     return CodeEditorScreen.openedFolder;
 }
 
+std::string GetOpenedFile()
+{
+    return CodeEditorScreen.codeTabs[CodeEditorScreen.currentTab].openedFile;
+}
+
 void OpenTab(char *file)
 {
     CodeEditorScreen.OpenTab(file);

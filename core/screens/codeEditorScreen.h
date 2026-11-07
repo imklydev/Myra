@@ -10,6 +10,7 @@
 extern void ToggleShowProjectFolderOverview();
 extern void OpenTab(char *file);
 extern std::string GetOpenedFolder();
+std::string GetOpenedFile();
 void SetCurrentTab(int tab);
 
 #include "../sections/lineNumbersSection.h"
@@ -24,10 +25,7 @@ class codeEditorScreen : public Screen
 private:
     bool isCursorAllowedToMove = true;
 
-    int currentTab = 0;
-
     codeTab defaultTab = {{{"", -1}}, 0, "", "", -1, -1, 0, false, Vector2(0, 0)};
-    std::vector<codeTab> codeTabs = {defaultTab};
 
     void EraseCodePointAtCursorPos()
     {
@@ -616,6 +614,8 @@ private:
     }
 
 public:
+    std::vector<codeTab> codeTabs = {defaultTab};
+    int currentTab = 0;
     bool shouldShowProjectFolderOverview = false;
     std::string openedFolder = "";
 
