@@ -37,6 +37,10 @@ int main(int argc, char *argv[])
         {
             if (event.type == SDL_EVENT_QUIT)
             {
+                if (currentScreen == &CodeEditorScreen)
+                {
+                    CodeEditorScreen.OnQuit();
+                }
                 running = false;
             }
 

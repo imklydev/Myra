@@ -588,6 +588,13 @@ private:
         codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, "\n");
         MoveCursorRight();
 
+        if (codeTabs[currentTab].text[codeTabs[currentTab].CursorPos - 1] == '{')
+        {
+            WriteTab();
+            codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, lineStartSpacing);
+            codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, "\n");
+        }
+
         codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, lineStartSpacing);
         codeTabs[currentTab].CursorPos += lineStartSpacing.size();
     }
@@ -613,11 +620,70 @@ private:
         }
     }
 
+    void SaveCurrentOpenFilesAndFolders()
+    {
+        std::ofstream saveLastOpenedFilesAndFoldersFile(std::string(SDL_GetCurrentDirectory()) + "assets/misc/lastOpened.txt");
+
+        if (!openedFolder.empty())
+        {
+            saveLastOpenedFilesAndFoldersFile << openedFolder;
+        }
+        else
+        {
+            saveLastOpenedFilesAndFoldersFile << "NO_OPENED_FOLDER";
+        }
+
+        saveLastOpenedFilesAndFoldersFile << '\n';
+
+        saveLastOpenedFilesAndFoldersFile << codeTabs.size();
+        for (auto tab : codeTabs)
+        {
+            saveLastOpenedFilesAndFoldersFile << tab.openedFile << "\n";
+        }
+
+        saveLastOpenedFilesAndFoldersFile.close();
+    }
+
 public:
     std::vector<codeTab> codeTabs = {defaultTab};
     int currentTab = 0;
     bool shouldShowProjectFolderOverview = false;
     std::string openedFolder = "";
+
+    codeEditorScreen()
+    {
+        std::ifstream loadLastOpenedFilesAndFoldersFile(std::string(SDL_GetCurrentDirectory()) + "assets/misc/lastOpened.txt");
+
+        std::string data;
+
+        std::getline(loadLastOpenedFilesAndFoldersFile, data);
+
+        if (data != "NO_OPENED_FOLDER")
+        {
+            openedFolder = data;
+        }
+
+        int tabsOpenedLastTime = 0;
+        loadLastOpenedFilesAndFoldersFile >> tabsOpenedLastTime;
+        for (int i = 0; i < tabsOpenedLastTime; i++)
+        {
+            std::string currentOpenedFile;
+            std::getline(loadLastOpenedFilesAndFoldersFile, currentOpenedFile);
+            OpenTab((char *)currentOpenedFile.c_str());
+        }
+
+        loadLastOpenedFilesAndFoldersFile.close();
+    }
+
+    void OnQuit()
+    {
+        // if you already "saved as..." a file, auto save it on exit.
+        if (!codeTabs[currentTab].openedFile.empty())
+        {
+            SaveFile();
+        }
+        SaveCurrentOpenFilesAndFolders();
+    }
 
     void SetCurrentTab(int tab)
     {
