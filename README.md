@@ -1,5 +1,12 @@
 # Myra — a performant, highly customizable, and unique code editor.
 
+![The Myra Code Editor being used to improve and rewrite code from the Myra Code Editor](readme-images/image.png)
+
+## Myra is still in development!
+
+It's not recommended as a daily driver just yet, but if you'd like to help improve this little project, feel free to try it out and contribute!
+
+
 # Keybinds:
 
 **CTRL+O** - Open a file  
@@ -21,6 +28,13 @@
 
 To build Myra, you'll need CMake and ninja/make installed.
 Also, SDL3, SDL3_image, and SDL3_ttf need to be installed on your system (for ease of use, you should probably use a package manager)
+
+# Third party libraries used
+
+- [tinyfiledialogs](https://sourceforge.net/projects/tinyfiledialogs/): for cross-platform native dialogs (file open/save)
+- [SDL](https://www.libsdl.org/): the rendering backend Myra uses
+- [SDL_ttf](https://github.com/libsdl-org/SDL_ttf): font loading and text rendering
+- [SDL_image](https://github.com/libsdl-org/SDL_image): rendering image files
 
 # Credits
 
