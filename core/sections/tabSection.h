@@ -49,7 +49,7 @@ public:
     Vector2 pos = {0, 0};
     Vector2 size = {(float)4000, 30};
     int textSize = 16;
-    float tabSize = 200;
+    float tabSize = 250;
     float tabSpacing = 5;
     std::vector<codeTab> *codeTabs;
     Button showFolderButton = {{0, 0}, {50, size.y}, showFolder};

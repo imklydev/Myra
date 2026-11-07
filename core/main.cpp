@@ -26,6 +26,13 @@ int main(int argc, char *argv[])
         }
     }
 
+    // only show the Myra Screen if theres no folder/tabs open from previous sessions. (pretty bad implementation lol)
+    if (!CodeEditorScreen.codeTabs[0].openedFile.empty())
+    {
+        SetCurrentScreen(&CodeEditorScreen);
+        ActuallySetCurrentScreen();
+    }
+
     while (running)
     {
         nextScreen = currentScreen;
@@ -46,11 +53,6 @@ int main(int argc, char *argv[])
 
             HandleKeyboard(&event);
             HandleMouse(&event);
-        }
-
-        if (Keyboard.escape)
-        {
-            running = false;
         }
 
         SetDrawColor(BG_COLOR);

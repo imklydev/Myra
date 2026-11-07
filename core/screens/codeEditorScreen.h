@@ -472,6 +472,10 @@ private:
     {
         if (codeTabs.size() > currentTab + 1)
         {
+            if (!codeTabs[currentTab].openedFile.empty())
+            {
+                SaveFile();
+            }
             currentTab = currentTab + 1;
             isCursorAllowedToMove = false; // to prevent also moving the cursor right
         }
@@ -481,6 +485,10 @@ private:
     {
         if (currentTab > 0)
         {
+            if (!codeTabs[currentTab].openedFile.empty())
+            {
+                SaveFile();
+            }
             currentTab--;
             isCursorAllowedToMove = false; // to prevent also moving the cursor left
         }
@@ -588,7 +596,7 @@ private:
         codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, "\n");
         MoveCursorRight();
 
-        if (codeTabs[currentTab].text[codeTabs[currentTab].CursorPos - 1] == '{')
+        if ((codeTabs[currentTab].CursorPos - 1 > 0) && codeTabs[currentTab].text[codeTabs[currentTab].CursorPos - 1] == '{')
         {
             WriteTab();
             codeTabs[currentTab].text.insert(codeTabs[currentTab].CursorPos + 1, lineStartSpacing);
