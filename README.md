@@ -1,11 +1,12 @@
-# Myra — a performant, highly customizable, and unique code editor.
+# Myra — a lightweight, blazingly mediocre code editor.
 
 ![The Myra Code Editor being used to improve and rewrite code from the Myra Code Editor](readme-images/image.png)
 
-## Myra is still in development!
-
-It's not recommended as a daily driver just yet, but if you'd like to help improve this little project, feel free to try it out and contribute!
-
+## Revolutionary features include:
+  - Opening files
+  - Opening folders
+  - Writing code
+  - Syntax highlighting, so your code looks cool because some things are colored.
 
 # Keybinds:
 
@@ -20,14 +21,14 @@ It's not recommended as a daily driver just yet, but if you'd like to help impro
 **CTRL+ALT+RIGHT** - Switch to next tab  
 **CTRL+ALT+LEFT** - Switch to previous tab  
 **CTRL+N** - Create new file/tab  
-**CTRL+Q** - Close current tab
-**CTRL+Z** - Undo
+**CTRL+Q** - Close current tab 
+**CTRL+Z** - Undo 
 **CTRL+Y** - Redo
 
 # Building Myra from source:
 
 To build Myra, you'll need CMake and ninja/make installed.
-Also, SDL3, SDL3_image, and SDL3_ttf need to be installed on your system (for ease of use, you should probably use a package manager)
+Also, SDL3, SDL3_image, and SDL3_ttf need to be installed on your system so that CMake can find them.
 
 # Third party libraries used
 
