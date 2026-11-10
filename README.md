@@ -2,7 +2,7 @@
 
 ![The Myra Code Editor being used to improve and rewrite code from the Myra Code Editor](readme-images/image.png)
 
-## Revolutionary features include:
+# Revolutionary features include:
   - Opening files
   - Opening folders
   - Writing code
