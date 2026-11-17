@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 
 project(Myra
     VERSION 1.0
-    DESCRIPTION "Performant, customizable and fast code editor."
+    DESCRIPTION "A lightweight, blazingly mediocre code editor"
     LANGUAGES CXX
 )
 
