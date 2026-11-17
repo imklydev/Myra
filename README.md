@@ -1,4 +1,4 @@
-# Myra — a lightweight, blazingly mediocre code editor.
+# Myra — a lightweight, blazingly mediocre code editor
 
 ![The Myra Code Editor being used to improve and rewrite code from the Myra Code Editor](readme-images/image.png)
 
