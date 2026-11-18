@@ -44,6 +44,8 @@ inline void showFolder()
 
 class tabSection : public Section
 {
+private:
+    int total_tabs_size = 0;
 
 public:
     Vector2 pos = {0, 0};
@@ -56,6 +58,7 @@ public:
 
     void draw(Vector2 pos_offset, int selectedTab = 0)
     {
+        total_tabs_size = 0;
         SetDrawColor(TABS_SECTION_BG_COLOR);
         DrawRect(pos, size); // Background (tabs are drawn on top of this)
 
@@ -100,6 +103,8 @@ public:
                 std::string title = path.substr(path.find_last_of("/\\") + 1);
                 DrawText(title, textSize, pos + Vector2{tabSize * i + tabSpacing * i + (showFolderButton.size.x), 0.0f}, {tabSize, size.y});
             }
+
+            total_tabs_size += (tabSize + tabSpacing);
         }
 
         // Draw folder icon
@@ -109,9 +114,23 @@ public:
 
         if (isMouseHoveringOver(pos + pos_offset, size))
         {
-            pos.x += Mouse.scroll * SCROLL_SENSITIVITY;
+            // only allow scrolling if tabs go off screeen
+            if (total_tabs_size > ScreenWidth)
+            {
 
-            if (pos.x > 0)
+                pos.x += Mouse.scroll * SCROLL_SENSITIVITY;
+
+                if (pos.x > 0)
+                {
+                    pos.x = 0;
+                }
+
+                if(pos.x < ScreenWidth - total_tabs_size)
+                {
+                    pos.x = ScreenWidth - total_tabs_size;
+                }
+            }
+            else
             {
                 pos.x = 0;
             }
